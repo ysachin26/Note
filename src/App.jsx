@@ -9,8 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import Archieve from './components/Archieve';
 import Important from './components/Important';
 import Bin from './components/Bin';
-import {Login} from './components/LoginSignup/Login'
-import { Register } from './components/LoginSignup/Register';
+import { LoginSignup } from './components/LoginSignup/LoginSignup';
 
 const router = createBrowserRouter([
   {
@@ -59,15 +58,10 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <div>
-      <Login />
+      <LoginSignup />
     </div>,
   },
-  {
-    path: "/register",
-    element: <div>
-      <Register />
-    </div>,
-  },
+   
 ]);
 
 const App = () => {
