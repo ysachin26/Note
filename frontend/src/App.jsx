@@ -1,59 +1,71 @@
-import React from 'react'
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { Navbar } from './components/Navbar'
 import { Pastes } from './components/Notes'
 import { ViewPastes } from './components/ViewPastes'
+
 import { Home } from './components/Home'
 import { Toaster } from 'react-hot-toast';
 import Archieve from './components/Archieve';
 import Important from './components/Important';
 import Bin from './components/Bin';
 import { LoginSignup } from './components/LoginSignup/LoginSignup';
+import { useSelector } from 'react-redux'
+import { Navigate } from 'react-router-dom'
 
+const ProtectedRoute = ({ children }) => {
+  const user = useSelector((state) => state.auth.user)
+  if (!user) {
+    return <Navigate to="/login" />
+  }
+  return children
+}
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <div>
-      <Navbar />
-      <Home />
-    </div>,
+    element: <ProtectedRoute>
+
+      <div>
+        <Navbar />
+        <Home />
+      </div>
+    </ProtectedRoute>,
   },
 
   {
     path: "/notes",
-    element: <div>
+    element: <ProtectedRoute><div>
       <Navbar />
       <Pastes />
-    </div>,
+    </div></ProtectedRoute>,
   },
   {
     path: "/Archieve",
-    element: <div>
+    element: <ProtectedRoute><div>
       <Navbar />
       <Archieve />
-    </div>,
+    </div></ProtectedRoute>,
   },
   {
     path: "/important",
-    element: <div>
+    element: <ProtectedRoute><div>
       <Navbar />
       <Important />
-    </div>,
+    </div></ProtectedRoute>,
   },
   {
     path: "/Bin",
-    element: <div>
+    element: <ProtectedRoute><div>
       <Navbar />
       <Bin />
-    </div>,
+    </div></ProtectedRoute>,
   },
   {
     path: "/notes/:id",
-    element: <div>
+    element: <ProtectedRoute><div>
       <Navbar />
       <ViewPastes />
-    </div>,
+    </div></ProtectedRoute>,
   },
   {
     path: "/login",
@@ -61,7 +73,7 @@ const router = createBrowserRouter([
       <LoginSignup />
     </div>,
   },
-   
+
 ]);
 
 const App = () => {

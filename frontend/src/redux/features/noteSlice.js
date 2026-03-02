@@ -1,6 +1,14 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { createNote, fetchNotes, updateNote, deleteNote } from '../../api/noteApi';
 import toast from 'react-hot-toast';
-import { setlocalStorage } from '../../utility/localstorage';
+// import { setlocalStorage } from '../../utility/localstorage';
+
+
+/* 
+
+//old apporach with local storage 
+
+
 const initialState = {
    pastes: localStorage.getItem('pastes')
       ? JSON.parse(localStorage.getItem('pastes'))
@@ -97,8 +105,8 @@ export const pasteSlice = createSlice({
          }
 
       },
-       
-       removePaste: (state, action) => {
+
+      removePaste: (state, action) => {
          const id = action.payload;
          const paste = state.pastes.find((item) => item.id === id);
 
@@ -170,7 +178,7 @@ export const pasteSlice = createSlice({
             toast.success('Moved in bin')
          }
       },
-       binImportantItems: (state, action) => {
+      binImportantItems: (state, action) => {
          const id = action.payload;
          const paste = state.important.find((p) => p.id === id);
 
@@ -190,6 +198,60 @@ export const pasteSlice = createSlice({
       },
    },
 })
- 
-export const { addToPaste,binImportantItems, binArchiveItems, binItems, deleteItem, unarchivePaste, deleteImportant, deleteArchivePaste, importantNotes, unimportantNotes, updateToPaste, removePaste, resetPaste, pinnedCard, archievePaste } = pasteSlice.actions;
+
+export const { addToPaste, binImportantItems, binArchiveItems, binItems, deleteItem, unarchivePaste, deleteImportant, deleteArchivePaste, importantNotes, unimportantNotes, updateToPaste, removePaste, resetPaste, pinnedCard, archievePaste } = pasteSlice.actions;
 export default pasteSlice.reducer;
+*/
+
+const initialState = {
+   notes: [],
+   loading: false,
+   error: null
+}
+
+export const fetchNotesThunk = createAsyncThunk('notes/fetch', async () => {
+   const response = await fetchNotes()
+   return response.data.notes
+})
+
+export const createNoteThunk = createAsyncThunk('notes/create', async ({ title, description }) => {
+   const response = await createNote(title, description)
+   return response.data.notes
+})
+
+export const updateNoteThunk = createAsyncThunk('notes/update', async ({ id, data }) => {
+   const response = await updateNote(id, data)
+   return response.data.notes
+})
+
+export const deleteNoteThunk = createAsyncThunk('notes/delete', async (id) => {
+   await deleteNote(id)
+   return id
+})
+
+const pasteSlice = createSlice({
+   name: 'paste',
+   initialState,
+   reducers: {},
+   extraReducers: (builder) => {
+      builder
+         .addCase(fetchNotesThunk.fulfilled, (state, action) => {
+            state.notes = action.payload
+         })
+         .addCase(createNoteThunk.fulfilled, (state, action) => {
+            state.notes.push(action.payload)
+            toast.success('Note created')
+         })
+         .addCase(updateNoteThunk.fulfilled, (state, action) => {
+            const index = state.notes.findIndex((n) => n._id === action.payload._id)
+            if (index !== -1) state.notes[index] = action.payload
+            toast.success('Note updated')
+         })
+         .addCase(deleteNoteThunk.fulfilled, (state, action) => {
+            state.notes = state.notes.filter((n) => n._id !== action.payload)
+            toast.success('Note deleted')
+         })
+   }
+})
+
+export default pasteSlice.reducer

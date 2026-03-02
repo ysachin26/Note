@@ -1,14 +1,19 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { unimportantNotes, binImportantItems } from '../redux/features/pasteSlice';
+//import { unimportantNotes, binImportantItems } from '../redux/features/noteSlice';
 import { FaRedo } from 'react-icons/fa';
 import { MdDelete } from 'react-icons/md';
 import { IoCopyOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
 import { FaStar } from "react-icons/fa";
+import { updateNoteThunk } from '../redux/features/noteSlice'
+
 
 export const Important = () => {
   const dispatch = useDispatch();
-  const { important } = useSelector((state) => state.paste);
+  // const { important } = useSelector((state) => state.paste);
+
+  const { notes } = useSelector((state) => state.paste)
+  const important = notes.filter(n => n.isImportant && !n.isBin)
 
   const copyFromClipboard = async (text) => {
     if (!navigator?.clipboard) {
@@ -23,15 +28,22 @@ export const Important = () => {
     }
   };
 
+  // const handleunimportantNotes = (id) => {
+
+  //   dispatch(unimportantNotes(id));
+  // };
+
+  // const handleDelete = (id) => {
+  //   dispatch(binImportantItems(id))
+  // }
+
+
   const handleunimportantNotes = (id) => {
- 
-    dispatch(unimportantNotes(id));
-  };
-
-  const handleDelete = (id) => {
-    dispatch(binImportantItems(id))
+    dispatch(updateNoteThunk({ id, data: { isImportant: false } }))
   }
-
+  const handleDelete = (id) => {
+    dispatch(updateNoteThunk({ id, data: { isBin: true } }))
+  }
 
   return (
     <div className="p-4">
@@ -40,11 +52,11 @@ export const Important = () => {
       {important.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {important.map((p) => (
-            <div key={p.id} className="border rounded-lg bg-white flex flex-col">
+            <div key={p._id} className="border rounded-lg bg-white flex flex-col">
               <div className="flex items-center justify-between px-4 py-3 border-b">
                 <h3 className="text-md font-medium truncate">{p.title || 'Untitled'}</h3>
                 <button
-                  onClick={() => copyFromClipboard(p.data)}
+                  onClick={() => copyFromClipboard(p.description)}
                   aria-label="Copy"
                   className="text-gray-600 hover:text-gray-800"
                 >
@@ -54,7 +66,7 @@ export const Important = () => {
 
               <div className="px-4 py-3 flex-grow">
                 <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">
-                  {p.data}
+                  {p.description}
                 </pre>
               </div>
 
@@ -62,7 +74,7 @@ export const Important = () => {
                 <div className="flex gap-2">
                   <span className="material-symbols-outlined">calendar_clock</span>
                   <small className="text-xs text-gray-500">
-                    {new Date(p.createAt).toLocaleDateString('en-GB', {
+                    {new Date(p.createdAt).toLocaleDateString('en-GB', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric'
@@ -73,7 +85,7 @@ export const Important = () => {
                 <div className="flex gap-3">
 
                   <button
-                    onClick={() => handleunimportantNotes(p.id)}
+                    onClick={() => handleunimportantNotes(p._id)}
                     aria-label="unimportant"
                     className="text-blue-600 hover:text-blue-800"
                   >
@@ -86,7 +98,7 @@ export const Important = () => {
                   >
                     <MdDelete />
                   </button> */}
-                  <button onClick={() => handleDelete(p.id)} aria-label="Delete paste" className="text-red-600 hover:text-red-800">
+                  <button onClick={() => handleDelete(p._id)} aria-label="Delete paste" className="text-red-600 hover:text-red-800">
                     <MdDelete />
                   </button>
 

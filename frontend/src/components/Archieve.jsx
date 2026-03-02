@@ -1,13 +1,17 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { unarchivePaste,binArchiveItems } from '../redux/features/pasteSlice';
+//import { unarchivePaste, binArchiveItems } from '../redux/features/noteSlice';
 import { FaRedo } from 'react-icons/fa';
 import { MdDelete } from 'react-icons/md';
 import { IoCopyOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
+import { updateNoteThunk } from '../redux/features/noteSlice'
 
 export const Archive = () => {
   const dispatch = useDispatch();
-  const { archieve } = useSelector((state) => state.paste);
+  // const { archieve } = useSelector((state) => state.paste);
+
+  const { notes } = useSelector((state) => state.paste)
+  const archieve = notes.filter(n => n.isArchived && !n.isBin)
 
   const copyFromClipboard = async (text) => {
     if (!navigator?.clipboard) {
@@ -22,15 +26,20 @@ export const Archive = () => {
     }
   };
 
+  // const handleUnarchive = (id) => {
+  //   dispatch(unarchivePaste(id));
+  // };
+
+  // const deleteFromPaste = (id) => {
+  //   dispatch(binArchiveItems(id));
+  // };
+
   const handleUnarchive = (id) => {
-    dispatch(unarchivePaste(id));
-  };
-
-const deleteFromPaste = (id) => {
-    dispatch(binArchiveItems(id));
-  };
-
-
+    dispatch(updateNoteThunk({ id, data: { isArchived: false } }))
+  }
+  const deleteFromPaste = (id) => {
+    dispatch(updateNoteThunk({ id, data: { isBin: true } }))
+  }
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-6">Archived Notes</h2>
@@ -38,11 +47,11 @@ const deleteFromPaste = (id) => {
       {archieve.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {archieve.map((p) => (
-            <div key={p.id} className="border rounded-lg bg-white flex flex-col">
+            <div key={p._id} className="border rounded-lg bg-white flex flex-col">
               <div className="flex items-center justify-between px-4 py-3 border-b">
                 <h3 className="text-md font-medium truncate">{p.title || 'Untitled'}</h3>
                 <button
-                  onClick={() => copyFromClipboard(p.data)}
+                  onClick={() => copyFromClipboard(p.description)}
                   aria-label="Copy"
                   className="text-gray-600 hover:text-gray-800"
                 >
@@ -52,7 +61,7 @@ const deleteFromPaste = (id) => {
 
               <div className="px-4 py-3 flex-grow">
                 <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">
-                  {p.data}
+                  {p.description}
                 </pre>
               </div>
 
@@ -60,7 +69,7 @@ const deleteFromPaste = (id) => {
                 <div className="flex gap-2">
                   <span className="material-symbols-outlined">calendar_clock</span>
                   <small className="text-xs text-gray-500">
-                    {new Date(p.createAt).toLocaleDateString('en-GB', {
+                    {new Date(p.createdAt).toLocaleDateString('en-GB', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric'
@@ -71,22 +80,22 @@ const deleteFromPaste = (id) => {
                 <div className="flex gap-3">
 
                   <button
-                    onClick={() => handleUnarchive(p.id)}
+                    onClick={() => handleUnarchive(p._id)}
                     aria-label="Unarchive"
                     className="text-blue-600 hover:text-blue-800"
                   >
                     <FaRedo />
                   </button>
                   {/* <button
-                    onClick={() => handleDelete(p.id)}
+                    onClick={() => handleDelete(p._id)}
                     aria-label="Delete permanently"
                     className="text-red-600 hover:text-red-800"
                   >
                     <MdDelete />
                   </button> */}
-                  <button onClick={() => deleteFromPaste(p.id)} aria-label="Delete paste" className="text-red-600 hover:text-red-800">
-											<MdDelete />
-										</button>
+                  <button onClick={() => deleteFromPaste(p._id)} aria-label="Delete paste" className="text-red-600 hover:text-red-800">
+                    <MdDelete />
+                  </button>
 
                 </div>
               </div>
