@@ -10,11 +10,16 @@ import Archieve from './components/Archieve';
 import Important from './components/Important';
 import Bin from './components/Bin';
 import { LoginSignup } from './components/LoginSignup/LoginSignup';
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { fetchMeThunk } from './redux/features/authSlice'
 
 const ProtectedRoute = ({ children }) => {
-  const user = useSelector((state) => state.auth.user)
+  const { user, initialized } = useSelector((state) => state.auth)
+  if (!initialized) {
+    return <div>Loading...</div>
+  }
   if (!user) {
     return <Navigate to="/login" />
   }
@@ -77,6 +82,12 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
+  const dispatch = useDispatch()
+
+  useEffect(() => {
+    dispatch(fetchMeThunk())
+  }, [dispatch])
+
   return (
     <div>
       <RouterProvider router={router} />

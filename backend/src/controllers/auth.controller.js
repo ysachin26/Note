@@ -127,7 +127,25 @@ res.status(200).json({
     message:"user logged out successfully"
 })
 }
+
+async function getMe(req, res) {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: "login first" })
+        }
+
+        const user = await UserModel.findById(req.user.id).select('_id email name')
+        if (!user) {
+            return res.status(404).json({ message: "user not found" })
+        }
+
+        return res.status(200).json({ user })
+    } catch (error) {
+        return res.status(400).json({ message: `Internal Server Error ${error}` })
+    }
+}
 module.exports = {
     registerUser,
-    loginUser,logoutUser
+    loginUser,logoutUser,
+    getMe
 }

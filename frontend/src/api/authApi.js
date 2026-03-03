@@ -22,4 +22,8 @@ const registerUser =async (name, email, password) => {
 const logoutUser =async () => {
 return await axiosInstance.get('/auth/user/logout');
 }
-export { loginUser, registerUser, logoutUser }
+const getMe = async () => {
+ return await axiosInstance.get('/auth/user/me')
+}
+
+export { loginUser, registerUser, logoutUser, getMe }

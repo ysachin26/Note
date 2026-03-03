@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { loginUser, registerUser } from '../../api/authApi'
+import { loginUser, registerUser, getMe } from '../../api/authApi'
 
 
 export const loginThunk = createAsyncThunk('auth/login', async ({ email, password }) => {
@@ -14,10 +14,15 @@ export const registerThunk = createAsyncThunk('auth/register', async ({
     return response.data.user
 })
 
+export const fetchMeThunk = createAsyncThunk('auth/me', async () => {
+    const response = await getMe()
+    return response.data.user
+})
+
  
 const authSlice = createSlice({
     name: 'auth',
-    initialState: { user: null, loading: false, error: null },
+    initialState: { user: null, loading: false, error: null, initialized: false },
     reducers: {},
     extraReducers: (builder) => {
         builder
@@ -27,10 +32,12 @@ const authSlice = createSlice({
             .addCase(loginThunk.fulfilled, (state, action) => {
                 state.loading = false
                 state.user = action.payload
+                state.initialized = true
             })
             .addCase(loginThunk.rejected, (state, action) => {
                 state.loading = false
                 state.error = action.error.message
+                state.initialized = true
             })
                    .addCase(registerThunk.pending, (state) => {
                 state.loading = true
@@ -38,10 +45,25 @@ const authSlice = createSlice({
             .addCase(registerThunk.fulfilled, (state, action) => {
                 state.loading = false
                 state.user = action.payload
+                state.initialized = true
             })
             .addCase(registerThunk.rejected, (state, action) => {
                 state.loading = false
                 state.error = action.error.message
+                state.initialized = true
+            })
+            .addCase(fetchMeThunk.pending, (state) => {
+                state.loading = true
+            })
+            .addCase(fetchMeThunk.fulfilled, (state, action) => {
+                state.loading = false
+                state.user = action.payload
+                state.initialized = true
+            })
+            .addCase(fetchMeThunk.rejected, (state) => {
+                state.loading = false
+                state.user = null
+                state.initialized = true
             })
     }
 })
