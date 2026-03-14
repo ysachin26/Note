@@ -15,6 +15,7 @@ import { Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { fetchMeThunk } from './redux/features/authSlice'
 import { fetchNotesThunk } from './redux/features/noteSlice'
+import OtpVerification from "./components/OtpVerification/OtpVerification";
 
 const ProtectedRoute = ({ children }) => {
   const { user, initialized } = useSelector((state) => state.auth)
@@ -79,7 +80,12 @@ const router = createBrowserRouter([
       <LoginSignup />
     </div>,
   },
-   
+  {
+    path: "/verify",
+    element: <div>
+      <OtpVerification />
+    </div>,
+  },
 
 ]);
 
@@ -97,7 +103,7 @@ const App = () => {
       dispatch(fetchNotesThunk())
     }
   }, [dispatch, initialized, user])
-  
+
   return (
     <div>
       <RouterProvider router={router} />

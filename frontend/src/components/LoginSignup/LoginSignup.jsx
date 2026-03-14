@@ -80,8 +80,9 @@ export const LoginSignup = () => {
                                 <input value={password} onChange={(e) => setPassword(e.target.value)} className="h-10 w-60 focus:outline-none border-2 rounded-md" type="password" placeholder="password" />
                             </div>
 
-                            <div className="bg-white rounded-sm w-60 h-10 mt-5">
-                                <button className=" bg-black h-10 w-60 focus:outline-none text-white" type="submit"
+                            <div  className="bg-white rounded-sm w-60 h-10 mt-5">
+                                <a href=""></a>
+                                <button className=" bg-black h-10 w-60 focus:outline-none text-white" type="submit" 
                                 >
                                     Signup
                                 </button>
