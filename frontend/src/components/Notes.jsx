@@ -129,105 +129,136 @@ export const Pastes = () => {
 		dispatch(updateNoteThunk({ id, data: { isImportant: true } }))
 	}
 	return (
+		<div
+			className="min-h-screen bg-slate-200"
+			style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+		>
+			<div className="mx-auto w-full max-w-6xl px-6 py-10">
+				<div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+					<div>
+						<p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Library</p>
+						<h1
+							className="mt-3 text-3xl font-semibold text-slate-900"
+							style={{ fontFamily: "'Crimson Pro', serif" }}
+						>
+							All notes
+						</h1>
+						<p className="mt-2 text-sm text-slate-600">Search, pin, and archive your saved ideas.</p>
+					</div>
+					<div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+						Pinned on top
+					</div>
+				</div>
 
-		<div className="p-4">
-			<div className='flex rounded-md  h-20 justify-center item-center '>
+				<div className="mt-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+					<label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Search notes</label>
+					<input
+						className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
+						value={searchValue}
+						onChange={handleSearch}
+						placeholder="Search your notes..."
+						type="text"
+					/>
+				</div>
 
-				<input
-					className='rounded-md w-200 mb-10 border-2 ml-2'
-					value={searchValue}
-					onChange={handleSearch}
-					placeholder='    search your pastes...' type="text" size={50} />
-			</div>
-			<div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ">
-				{filteredData.length > 0 ? (
-					filteredData.map((p) => (
-						<div key={p._id} className="flex justify-center">
-							<div className="w-full max-w-xl border rounded-lg shadow-sm bg-white overflow-hidden flex flex-col">
+				<div className="mt-8 grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ">
+					{filteredData.length > 0 ? (
+						filteredData.map((p) => (
+							<div key={p._id} className="flex justify-center">
+								<div className="w-full max-w-xl rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
 
-								<div className="flex items-center justify-between px-4 py-3 border-b gap-5">
-									<h3 className="text-lg font-medium truncate">{p.title || 'Untitled'}</h3>
-									<div className="flex items-center gap-2">
-										<NavLink to={`/?pasteId=${p._id}`} aria-label="Edit paste" className="text-gray-600 hover:text-gray-800">
-											<FaRegEdit />
-										</NavLink>
-										<NavLink to={`/notes/${p._id}`} aria-label="View paste" className="text-gray-600 hover:text-gray-800">
-											<IoEyeSharp />
-										</NavLink>
-										<button onClick={() => copyFromClipboard(p.description)} aria-label="Copy paste" className="text-gray-600 hover:text-gray-800">
-											<IoCopyOutline />
-										</button>
+									<div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 gap-5">
+										<h3 className="text-lg font-medium truncate">{p.title || 'Untitled'}</h3>
+										<div className="flex items-center gap-2">
+											<NavLink to={`/?pasteId=${p._id}`} aria-label="Edit paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+												<FaRegEdit />
+											</NavLink>
+											<NavLink to={`/notes/${p._id}`} aria-label="View paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+												<IoEyeSharp />
+											</NavLink>
+											<button onClick={() => copyFromClipboard(p.description)} aria-label="Copy paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+												<IoCopyOutline />
+											</button>
 
-										<button
-											onClick={() => sharePaste(p)}
-											aria-label="Share"
-											className="text-gray-600 hover:text-gray-800"
-										>
-											<CiShare1 />
-										</button>
+											<button
+												onClick={() => sharePaste(p)}
+												aria-label="Share"
+												className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+											>
+												<CiShare1 />
+											</button>
 
-										{
-											p.isPinned ?
-												<button
-													onClick={() => pinItem(p._id)}
-													aria-label="Copy paste"
-													className="text-red-600   ">
-													<BsPinFill />
-												</button> :
-												<button onClick={() => pinItem(p._id)}
-													aria-label="Copy paste"
-													className="text-gray-600 hover:text-gray-800">
-													<BsPin />
-												</button>
-
-										}
-
-
-
-									</div>
-								</div>
-
-
-								<div className="px-4 py-3">
-									<pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">{p.description}</pre>
-								</div>
-
-
-								<div className="px-4 py-2 border-t flex gap-2 justify-between ">
-									<div className="px-4 py-2  flex gap-2  ">
-										<span className="material-symbols-outlined">
-											calendar_clock
-										</span>
-										<span>
-											<small className="text-xs text-gray-500">	{new Date(p.createdAt).toLocaleDateString('en-GB', {
-												day: 'numeric', month: 'long', year: 'numeric'
-											})
-											}</small>
-										</span>
-									</div>
-									<div className="px-4 py-2  flex gap-2  justify-evenly">
-
-										<button onClick={() => makePasteArchieve(p._id)}
-
-											className="text-blue-600 hover:text-grey-800">
-											<MdArchive />
-										</button>
-										<button onClick={() => handleimportantNotes(p._id)} aria-label="Delete paste" className="text-red-600 hover:text-red-800">
-											<CiStar />
-										</button>
-										<button onClick={() => deleteFromPaste(p._id)} aria-label="Delete paste" className="text-red-600 hover:text-red-800">
-											<MdDelete />
-										</button>
-
+											{
+												p.isPinned ? (
+													<button
+														onClick={() => pinItem(p._id)}
+														aria-label="Copy paste"
+														className="rounded-md p-2 text-amber-600 transition hover:bg-amber-50"
+													>
+														<BsPinFill />
+													</button>
+												) : (
+													<button
+														onClick={() => pinItem(p._id)}
+														aria-label="Copy paste"
+														className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+													>
+														<BsPin />
+													</button>
+												)
+											}
+										</div>
 									</div>
 
+									<div className="px-4 py-4">
+										<pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">{p.description}</pre>
+									</div>
+
+									<div className="px-4 py-3 border-t border-slate-200 flex gap-2 justify-between ">
+										<div className="px-4 py-2  flex gap-2  ">
+											<span className="material-symbols-outlined">
+												calendar_clock
+											</span>
+											<span>
+												<small className="text-xs text-gray-500">	{new Date(p.createdAt).toLocaleDateString('en-GB', {
+													day: 'numeric', month: 'long', year: 'numeric'
+												})
+												}</small>
+											</span>
+										</div>
+										<div className="px-4 py-2  flex gap-2  justify-evenly">
+
+											<button
+												onClick={() => makePasteArchieve(p._id)}
+												className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+											>
+												<MdArchive />
+											</button>
+											<button
+												onClick={() => handleimportantNotes(p._id)}
+												aria-label="Delete paste"
+												className="rounded-md p-2 text-amber-600 transition hover:bg-amber-50 hover:text-amber-800"
+											>
+												<CiStar />
+											</button>
+											<button
+												onClick={() => deleteFromPaste(p._id)}
+												aria-label="Delete paste"
+												className="rounded-md p-2 text-rose-600 transition hover:bg-rose-50 hover:text-rose-800"
+											>
+												<MdDelete />
+											</button>
+
+										</div>
+
+									</div>
 								</div>
 							</div>
-						</div>
-					))
-				) : (
-					<p className="text-center text-gray-600">No Notes available</p>
-				)}
+						))
+					) : (
+						<p className="text-center text-gray-600">No notes available</p>
+					)}
+				</div>
 			</div>
 		</div>
 	);
