@@ -2,12 +2,13 @@ import React from 'react'
 
 const OtpVerification = () => {
     return (
-        <div className='flex items-center justify-center h-screen bg-slate-200   hover:shadow-[0_14px_36px_rgba(15,23,42,0.25)]'>
-
-            <div className=' flex flex-col  items-center justify-center h-[350px] w-[400px]
-             bg-[rgba(255,255,255,0.8)] rounded-md'>
+        <div
+            className="flex min-h-screen items-center justify-center bg-slate-200 px-6 py-10"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        >
+            <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-700/70">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                         Secure login
                     </p>
                     <h1
@@ -20,7 +21,7 @@ const OtpVerification = () => {
                         Use the 4-digit code sent to <span className="font-semibold text-slate-800">your email</span>.
                     </p>
                 </div>
-                <form className="mt-8 space-y-6" >
+                <form className="mt-6 space-y-5">
                     <div className="flex items-center justify-between gap-3">
                         <input
                             aria-label="OTP digit 1"
@@ -28,11 +29,7 @@ const OtpVerification = () => {
                             pattern="[0-9]*"
                             maxLength={1}
                             autoComplete="one-time-code"
-
-
-                             className="h-14 w-12  rounded-1xl border border-slate-200/80 bg-white/80 text-center text-xl 
-                            font-semibold text-slate-900 shadow-sm outline-none transition focus:-translate-y-0.5
-                             focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 sm:w-14"
+                            className="h-12 w-12 rounded-md border border-slate-300 bg-white text-center text-xl font-semibold text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
                             type="text"
                         />
                         <input
@@ -40,10 +37,7 @@ const OtpVerification = () => {
                             inputMode="numeric"
                             pattern="[0-9]*"
                             maxLength={1}
-
-                            className="h-14 w-12  rounded-1xl border border-slate-200/80 bg-white/80 text-center text-xl 
-                            font-semibold text-slate-900 shadow-sm outline-none transition focus:-translate-y-0.5
-                             focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 sm:w-14"
+                            className="h-12 w-12 rounded-md border border-slate-300 bg-white text-center text-xl font-semibold text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
                             type="text"
                         />
                         <input
@@ -51,8 +45,7 @@ const OtpVerification = () => {
                             inputMode="numeric"
                             pattern="[0-9]*"
                             maxLength={1}
-
-                            className="h-14 w-12rounded-1xl border border-slate-200/80 bg-white/80 text-center text-xl font-semibold text-slate-900 shadow-sm outline-none transition focus:-translate-y-0.5 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 sm:w-14"
+                            className="h-12 w-12 rounded-md border border-slate-300 bg-white text-center text-xl font-semibold text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
                             type="text"
                         />
                         <input
@@ -60,15 +53,13 @@ const OtpVerification = () => {
                             inputMode="numeric"
                             pattern="[0-9]*"
                             maxLength={1}
-
-                            className="h-14 w-12rounded-1xl border border-slate-200/80 bg-white/80 text-center text-xl font-semibold text-slate-900 shadow-sm outline-none transition focus:-translate-y-0.5 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 sm:w-14"
+                            className="h-12 w-12 rounded-md border border-slate-300 bg-white text-center text-xl font-semibold text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
                             type="text"
                         />
                     </div>
 
                     <button
-                        className="w-full rounded-full bg-slate-900 px-6 py-3 text-xs font-semibold uppercase tracking-[0.3em] text-white 
-                         hover: pointer focus:outline-none focus:ring-2 focus:ring-slate-400/60"
+                        className="w-full rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-400/60"
                         type="submit"
                     >
                         Verify and continue
@@ -78,18 +69,13 @@ const OtpVerification = () => {
                         <span>Did not receive it?</span>
                         <button
                             type="button"
-                            className="font-semibold text-emerald-700 transition hover:text-emerald-900"
+                            className="font-semibold text-slate-700 transition hover:text-slate-900"
                         >
                             Resend code
                         </button>
                     </div>
-
-
                 </form>
-
             </div>
-
-
         </div>
     )
 }
