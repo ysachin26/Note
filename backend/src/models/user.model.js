@@ -18,6 +18,18 @@ const UserSchema = new Schema
                 type: String,
                 required: true,
             },
+            otp:
+            {
+                type: String,
+            },
+            otpExpire: {
+                type: Date,
+            },
+            isVerified:
+            {
+                type: Boolean,
+                default: false,
+            },
             createdAt: {
                 type: Date,
                 default: Date.now,
