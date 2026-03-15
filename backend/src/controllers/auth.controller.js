@@ -2,7 +2,7 @@ const UserModel = require('../models/user.model')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
-const sendOTP = require('../utility/sendOTP')
+const sendOTP = require('../service/sendOTP.js')
 const generateOTP = require('../utility/generateOTP.js')
 const dotenv = require('dotenv')
 dotenv.config()
