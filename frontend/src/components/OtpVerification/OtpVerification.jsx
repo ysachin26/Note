@@ -27,7 +27,7 @@ const OtpVerification = () => {
         }
 
 
-        
+
 
     }
 
@@ -38,36 +38,36 @@ const OtpVerification = () => {
         }
 
     }
-     
+
     const handleSubmit = (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    const fullOtp = otp.join("");
-    if (!email) {
-        toast.error('Email is missing. Please signup again.')
-        navigate('/login')
-        return
-    }
-
-    if (fullOtp.length !== otp.length) {
-        toast.error('Please enter full OTP')
-        return
-    }
-
-    setIsVerifying(true)
-    verifyEmail(email, fullOtp)
-        .then((response) => {
-            toast.success(response.data?.message || 'OTP verified')
-            localStorage.removeItem('pendingOtpEmail')
+        const fullOtp = otp.join("");
+        if (!email) {
+            toast.error('Email is missing. Please signup again.')
             navigate('/login')
-        })
-        .catch((error) => {
-            toast.error(error?.response?.data?.message || 'Failed to verify OTP')
-        })
-        .finally(() => {
-            setIsVerifying(false)
-        })
-  };
+            return
+        }
+
+        if (fullOtp.length !== otp.length) {
+            toast.error('Please enter full OTP')
+            return
+        }
+
+        setIsVerifying(true)
+        verifyEmail(email, fullOtp)
+            .then((response) => {
+                toast.success(response.data?.message || 'OTP verified')
+                localStorage.removeItem('pendingOtpEmail')
+                navigate('/login')
+            })
+            .catch((error) => {
+                toast.error(error?.response?.data?.message || 'Failed to verify OTP')
+            })
+            .finally(() => {
+                setIsVerifying(false)
+            })
+    };
 
 
     return (
