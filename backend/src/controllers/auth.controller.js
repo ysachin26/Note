@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
 const sendOTP = require('../utility/sendOTP')
-const generateOTP = require('../utility/generateOtp.js')
+const generateOTP = require('../utility/generateOTP.js')
 const dotenv = require('dotenv')
 dotenv.config()
 
