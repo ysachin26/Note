@@ -2,7 +2,7 @@
 import axiosInstance from "./axiosInstance";
 
 const loginUser = async (email, password) => {
- return await  axiosInstance.post('/auth/user/login',
+    return await axiosInstance.post('/auth/user/login',
         {
             email,
             password
@@ -10,8 +10,8 @@ const loginUser = async (email, password) => {
     )
 }
 
-const registerUser =async (name, email, password) => {
- return await  axiosInstance.post('/auth/user/register',
+const registerUser = async (name, email, password) => {
+    return await axiosInstance.post('/auth/user/register',
         {
             name,
             email,
@@ -19,11 +19,17 @@ const registerUser =async (name, email, password) => {
         })
 }
 
-const logoutUser =async () => {
-return await axiosInstance.get('/auth/user/logout');
+const verifyEmail = async (email, otp) => {
+    return await axiosInstance.post('/auth/user/verify-otp', {
+        email,
+        otp
+    })
+}
+const logoutUser = async () => {
+    return await axiosInstance.get('/auth/user/logout');
 }
 const getMe = async () => {
- return await axiosInstance.get('/auth/user/me')
+    return await axiosInstance.get('/auth/user/me')
 }
 
-export { loginUser, registerUser, logoutUser, getMe }
+export { loginUser, registerUser, logoutUser, getMe, verifyEmail }

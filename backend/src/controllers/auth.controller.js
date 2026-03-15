@@ -96,6 +96,15 @@ async function loginUser(req, res) {
             })
         }
 
+        if (!user.isVerified) {
+            console.log("verify your email to login")
+            return res.status(403).json({
+                message: "Please verify email first"
+
+            });
+
+        }
+
         const isPasswordValid = await bcrypt.compare(password, user.password)
 
         if (!isPasswordValid) {

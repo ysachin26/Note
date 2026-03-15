@@ -32,7 +32,8 @@ export const LoginSignup = () => {
         else {
             const result = await dispatch(registerThunk({ name, email, password }))
             if (result.meta.requestStatus === 'fulfilled') {
-                navigate('/')
+                localStorage.setItem('pendingOtpEmail', email)
+                navigate('/verify', { state: { email } })
             }
         }
     }
