@@ -20,20 +20,27 @@ async function registerUser(req, res) {
         )
 
         //checking if user already exists in database
-
         if (isUserAlreadyExist) {
+            // If account exists but email not verified, resend OTP instead of blocking
+            if (!isUserAlreadyExist.isVerified) {
+                const otp = generateOTP();
+                isUserAlreadyExist.otp = otp;
+                isUserAlreadyExist.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+                await isUserAlreadyExist.save();
+                await sendOTP(email, otp);
+                return res.status(200).json({
+                    message: "Account exists but not verified. A new OTP has been sent to your email."
+                })
+            }
             return res.status(400).json({
                 message: "user already exists"
             })
         }
 
-
         //otp generation
         const otp = generateOTP();
-        console.log(otp)
         //hashing password before registering a user
         const hashedPassword = await bcrypt.hash(password, 10)
-
 
         const user = await UserModel.create(
             {
@@ -47,26 +54,11 @@ async function registerUser(req, res) {
 
         await sendOTP(email, otp);
 
-        //creating token
-        const token = jwt.sign(
-            {
-                id: user._id,
-            }, process.env.JWT_SECRET
-        )
-
-        res.cookie("token", token)
-
+        // No cookie here — user must verify OTP before getting a session
         res.status(201).json(
             {
                 message: "user created successfully please verify your otp",
-                user:
-                {
-                    _id: user._id,
-                    email: user.email,
-                    name: user.name
-                }
             }
-
         )
     } catch (error) {
         res.status(400).json(

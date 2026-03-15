@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { loginThunk, registerThunk } from '../../redux/features/authSlice'
+import { loginThunk, registerThunk, clearError } from '../../redux/features/authSlice'
 import { useState } from 'react'
 
 
@@ -21,6 +21,7 @@ export const LoginSignup = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        dispatch(clearError())
         if (isLogin === 'Login') {
             const result = await dispatch(loginThunk({ email, password }))
             if (result.meta.requestStatus ===
