@@ -4,8 +4,13 @@ const express = require('express')
 const authRoutes = require('./src/routes/auth.routes')
 const noteRoutes = require('./src/routes/notes.routes')
 const connectDB = require('./src/config/db')
+const { dnsFallBackMechanism } = require('./src/config/dns')
+const dns = require('dns');
 
+dns.setDefaultResultOrder('ipv4first')
+dnsFallBackMechanism()
 connectDB();
+
 const app = require('./src/app')
 const PORT = process.env.PORT || 5000;
 
