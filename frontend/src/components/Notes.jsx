@@ -13,17 +13,10 @@ import { MdArchive } from "react-icons/md";
 import { CiStar } from "react-icons/ci";
 import { updateNoteThunk } from '../redux/features/noteSlice'
 
-const renderedButton = () => {
-	let button = [];
-	for (let index = 0; index < 5; index++) {
-		button.push(<button key= {index} className='flex content-center justify-center  gap-2 
-			border-2 p-2 '>{index+1}</button>
-		)
 
-	}
-	return button;
-}
-const button = renderedButton()
+
+
+
 const copyFromClipboard = async (text) => {
 	// small guard and user feedback
 	if (!navigator?.clipboard) {
@@ -69,6 +62,7 @@ export const Pastes = () => {
 	const { notes } = useSelector((state) => state.paste);
 	const dispatch = useDispatch();
 	const [searchValue, setSearchValue] = useState('');
+	//const [currentPage, setCurrentPage] = useState('');
 
 	const filteredData = useMemo(() => {
 		const data = [...notes.filter(n => !n.isArchived && !n.isBin && !n.isImportant)];
@@ -275,10 +269,12 @@ export const Pastes = () => {
 				{<div className='flex content-center justify-center  gap-2 mt-4   '>
 					<div className='flex content-center justify-center  gap-2 mt-4  border-2 p-2 '>
 
-						 <button className='flex content-center justify-center  gap-2  bg-black text-white border-2 p-2 '>Prev</button>
-							{button}
-						 
-						<button className='flex content-center justify-center  gap-2  bg-black text-white  border-2 p-2 '>Next</button>
+
+						<button className='flex content-center justify-center  gap-2  
+						bg-black text-white  border-2 p-2 '>Prev</button>
+ 
+						<button className='flex content-center justify-center  gap-2  
+						bg-black text-white  border-2 p-2 '>Next</button>
 					</div></div>}
 			</div>
 		</div>

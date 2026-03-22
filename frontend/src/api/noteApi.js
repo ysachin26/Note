@@ -8,8 +8,11 @@ const createNote = async (title, description) => {
     )
 }
 
-const fetchNotes = async () => {
-    return await axiosInstance.get('/notes')
+const fetchNotes = async (page = 1, limit = 6) => {
+    return await axiosInstance.get('/notes',{
+        page,
+        limit
+    })
 }
 
 const updateNote = async (id,data) => {

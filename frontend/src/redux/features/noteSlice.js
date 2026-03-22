@@ -205,11 +205,13 @@ export default pasteSlice.reducer;
 
 const initialState = {
    notes: [],
+   page :1,
+   limit:6,
    loading: false,
    error: null
 }
 
-export const fetchNotesThunk = createAsyncThunk('notes/fetch', async () => {
+export const fetchNotesThunk = createAsyncThunk('notes/fetch', async (  ) => {
    const response = await fetchNotes()
    return response.data?.notes ?? response.data?.result?.[0]?.data ?? []
 })
