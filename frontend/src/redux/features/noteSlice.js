@@ -211,17 +211,17 @@ const initialState = {
 
 export const fetchNotesThunk = createAsyncThunk('notes/fetch', async () => {
    const response = await fetchNotes()
-   return response.data.notes
+   return response.data?.notes ?? response.data?.result?.[0]?.data ?? []
 })
 
 export const createNoteThunk = createAsyncThunk('notes/create', async ({ title, description }) => {
    const response = await createNote(title, description)
-   return response.data.notes
+   return response.data?.notes
 })
 
 export const updateNoteThunk = createAsyncThunk('notes/update', async ({ id, data }) => {
    const response = await updateNote(id, data)
-   return response.data.notes
+   return response.data?.notes
 })
 
 export const deleteNoteThunk = createAsyncThunk('notes/delete', async (id) => {

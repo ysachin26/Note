@@ -1,4 +1,5 @@
 const noteModel = require('../models/notes.model')
+const { Types } = require('mongoose')
 
 const saveNotes = async (req, res) => {
     try {
@@ -17,19 +18,50 @@ const saveNotes = async (req, res) => {
 }
 
 const getNotes = async (req, res) => {
-    try {
+    const userId = req.user.id;
 
-        const userId = req.user.id;
-        const allNotes = await noteModel.find({ userId: req.user.id })
+    try {
+        let page = parseInt(req.query.page ?? req.params.page, 10);
+        let limit = parseInt(req.query.limit ?? req.params.limit, 10);
+
+        if (isNaN(page) || page < 1) page = 1;
+        if (isNaN(limit) || limit < 1) limit = 8;
+
+        let skip = (page - 1) * limit;
+
+        const allNotes = await noteModel.aggregate([
+            {
+                $match: { userId: new Types.ObjectId(userId) }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "totalNotes" }],
+                    data: [
+                        { $sort: { createdAt: -1 } },
+                        { $skip: skip },
+                        { $limit: limit }
+                    ]
+                }
+            }
+        ]);
+
+        const metadata = allNotes?.[0]?.metadata?.[0] || { totalNotes: 0 }
+        const data = allNotes?.[0]?.data || []
+
         return res.status(200).json({
-            message: 'notes fetched successfully',
-            notes: allNotes
-        })
+            message: "notes fetched successfully",
+            page,
+            limit,
+            totalCount: metadata.totalNotes,
+            notes: data,
+            result: allNotes
+        });
+
     } catch (error) {
-        console.error('fetched Note:', error)
-        return res.status(500).json({ message: 'Internal Server Error' })
+        console.error("fetch Note:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
-}
+};
 
 const updateNote = async (req, res) => {
 
