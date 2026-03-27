@@ -12,11 +12,8 @@ import { BsPinFill } from "react-icons/bs";
 import { MdArchive } from "react-icons/md";
 import { CiStar } from "react-icons/ci";
 import { updateNoteThunk } from '../redux/features/noteSlice'
-
-
-
-
-
+import { useEffect } from 'react';
+import { fetchNotesThunk } from '../redux/features/noteSlice';
 const copyFromClipboard = async (text) => {
 	// small guard and user feedback
 	if (!navigator?.clipboard) {
@@ -59,10 +56,31 @@ const sharePaste = async (p) => {
 
 export const Pastes = () => {
 
-	const { notes } = useSelector((state) => state.paste);
+	const { notes, totalPages } = useSelector((state) => state.paste);
 	const dispatch = useDispatch();
 	const [searchValue, setSearchValue] = useState('');
 	//const [currentPage, setCurrentPage] = useState('');
+
+	const [Page, setPage] = useState(1);
+
+	// Fetch notes when page changes
+	useEffect(() => {
+		dispatch(fetchNotesThunk({ page: Page, limit: 6, scope: "active" }));
+	}, [Page, dispatch]);
+	const handleNextPage = () => {
+		if (Page < totalPages) setPage(Page + 1);
+	};
+
+	const handlePrevPage = () => {
+		if (Page > 1) setPage(Page - 1);
+	};
+
+	const handlePageClick = (pageNumber) => {
+		setPage(pageNumber);
+	};
+
+	const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
 
 	const filteredData = useMemo(() => {
 		const data = [...notes.filter(n => !n.isArchived && !n.isBin && !n.isImportant)];
@@ -266,16 +284,36 @@ export const Pastes = () => {
 						<p className="text-center text-gray-600">No notes available</p>
 					)}
 				</div>
-				{<div className='flex content-center justify-center  gap-2 mt-4   '>
-					<div className='flex content-center justify-center  gap-2 mt-4  border-2 p-2 '>
+				<div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+					<button
+						onClick={handlePrevPage}
+						disabled={Page === 1}
+						className="rounded-md border border-slate-300 bg-black px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						Prev
+					</button>
 
+					{pageNumbers.map((pageNumber) => (
+						<button
+							key={pageNumber}
+							onClick={() => handlePageClick(pageNumber)}
+							className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${Page === pageNumber
+									? 'border-black bg-black text-white'
+									: 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+								}`}
+						>
+							{pageNumber}
+						</button>
+					))}
 
-						<button className='flex content-center justify-center  gap-2  
-						bg-black text-white  border-2 p-2 '>Prev</button>
- 
-						<button className='flex content-center justify-center  gap-2  
-						bg-black text-white  border-2 p-2 '>Next</button>
-					</div></div>}
+					<button
+						onClick={handleNextPage}
+						disabled={Page === totalPages || totalPages === 0}
+						className="rounded-md border border-slate-300 bg-black px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						Next
+					</button>
+				</div>
 			</div>
 		</div>
 	);

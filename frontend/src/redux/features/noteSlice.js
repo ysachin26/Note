@@ -205,18 +205,22 @@ export default pasteSlice.reducer;
 
 const initialState = {
    notes: [],
-   page :1,
-   limit:6,
+   Page: 1,
+   totalCount: 0,
+
+   limit: 6,
+   totalPages: 0,
    loading: false,
    error: null
 }
 
-export const fetchNotesThunk = createAsyncThunk('notes/fetch', async (  ) => {
-   const response = await fetchNotes()
-   return response.data?.notes ?? response.data?.result?.[0]?.data ?? []
+export const fetchNotesThunk = createAsyncThunk('notes/fetch', async ({page = 1, limit = 6, scope = 'all'}={}) => {
+   const response = await fetchNotes(page, limit,scope)
+   return response.data
 })
 
 export const createNoteThunk = createAsyncThunk('notes/create', async ({ title, description }) => {
+  
    const response = await createNote(title, description)
    return response.data?.notes
 })
@@ -237,8 +241,20 @@ const pasteSlice = createSlice({
    reducers: {},
    extraReducers: (builder) => {
       builder
+         .addCase(fetchNotesThunk.pending, (state) => {
+            state.loading = true;
+         })
          .addCase(fetchNotesThunk.fulfilled, (state, action) => {
-            state.notes = action.payload
+            state.notes = action.payload.notes
+            state.Page = action.payload.page;
+            state.totalCount = action.payload.totalCount;
+            state.limit = action.payload.limit;
+            state.totalPages = Math.ceil(action.payload.totalCount / action.payload.limit);
+            state.loading = false;
+         })
+         .addCase(fetchNotesThunk.rejected, (state, action) => {
+            state.error = action.error.message;
+            state.loading = false;
          })
          .addCase(createNoteThunk.fulfilled, (state, action) => {
             state.notes.push(action.payload)

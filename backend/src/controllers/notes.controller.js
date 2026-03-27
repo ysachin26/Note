@@ -19,19 +19,43 @@ const saveNotes = async (req, res) => {
 
 const getNotes = async (req, res) => {
     const userId = req.user.id;
-
+const scope = req.query;
     try {
         let page = parseInt(req.query.page ?? req.params.page, 10);
         let limit = parseInt(req.query.limit ?? req.params.limit, 10);
 
         if (isNaN(page) || page < 1) page = 1;
-        if (isNaN(limit) || limit < 1) limit = 8;
+        if (isNaN(limit) || limit < 1) limit = 6;
+     let skip = (page - 1) * limit;
+        //base filter
+        const match = {userId:new Types.ObjectId(userId)};
 
-        let skip = (page - 1) * limit;
+        //scope filter
+        switch(scope)
+        {
+            case 'active':
+            match.isArchived = {$ne:true};
+            match.isImportant = {$ne:true};
+              match.isBin = { $ne: true };
+              break;
+
+              case 'archived':
+                 match.isArchived = true;
+        break; case 'bin':
+        match.isBin = true;
+        break; case 'important':
+        match.isImportant = true;
+        break; case 'all':
+      default:
+        // no extra filter
+        break;
+        }
+
+   
 
         const allNotes = await noteModel.aggregate([
             {
-                $match: { userId: new Types.ObjectId(userId) }
+                $match: match
             },
             {
                 $facet: {
