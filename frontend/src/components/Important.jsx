@@ -5,8 +5,8 @@ import { MdDelete } from 'react-icons/md';
 import { IoCopyOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
 import { FaStar } from "react-icons/fa";
-import { updateNoteThunk } from '../redux/features/noteSlice'
-
+import { updateNoteThunk,fetchNotesThunk } from '../redux/features/noteSlice'
+import { useEffect } from 'react';
 
 export const Important = () => {
   const dispatch = useDispatch();
@@ -14,6 +14,11 @@ export const Important = () => {
 
   const { notes } = useSelector((state) => state.paste)
   const important = notes.filter(n => n.isImportant && !n.isBin)
+
+  useEffect(() => {
+    dispatch(fetchNotesThunk({ page: 1, limit: 50, scope: 'important' }));
+  }, [dispatch]);
+  
 
   const copyFromClipboard = async (text) => {
     if (!navigator?.clipboard) {
@@ -38,11 +43,11 @@ export const Important = () => {
   // }
 
 
-  const handleunimportantNotes = (id) => {
-    dispatch(updateNoteThunk({ id, data: { isImportant: false } }))
+  const handleunimportantNotes = async (id) => {
+   await  dispatch(updateNoteThunk({ id, data: { isImportant: false } }))
   }
-  const handleDelete = (id) => {
-    dispatch(updateNoteThunk({ id, data: { isBin: true } }))
+  const handleDelete = async(id) => {
+    await dispatch(updateNoteThunk({ id, data: { isBin: true } }))
   }
 
   return (

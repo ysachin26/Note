@@ -5,7 +5,8 @@ import { MdDelete } from 'react-icons/md';
 import { IoCopyOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
 import { updateNoteThunk } from '../redux/features/noteSlice'
-
+import { useEffect } from 'react';
+import { fetchNotesThunk } from '../redux/features/noteSlice';
 export const Archive = () => {
   const dispatch = useDispatch();
   // const { archieve } = useSelector((state) => state.paste);
@@ -13,6 +14,10 @@ export const Archive = () => {
   const { notes } = useSelector((state) => state.paste)
   const archieve = notes.filter(n => n.isArchived && !n.isBin)
 
+  useEffect(() => {
+    dispatch(fetchNotesThunk({ page: 1, limit: 50, scope: 'archived' }));
+  }, [dispatch]);
+  
   const copyFromClipboard = async (text) => {
     if (!navigator?.clipboard) {
       toast.error('Clipboard not supported');
@@ -34,10 +39,11 @@ export const Archive = () => {
   //   dispatch(binArchiveItems(id));
   // };
 
-  const handleUnarchive = (id) => {
+  const handleUnarchive =  (id) => {
     dispatch(updateNoteThunk({ id, data: { isArchived: false } }))
   }
-  const deleteFromPaste = (id) => {
+  
+  const deleteFromPaste =  (id) => {
     dispatch(updateNoteThunk({ id, data: { isBin: true } }))
   }
   return (
