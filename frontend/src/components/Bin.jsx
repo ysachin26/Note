@@ -3,13 +3,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import { MdDelete } from 'react-icons/md';
 import { IoCopyOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
-import { deleteNoteThunk } from '../redux/features/noteSlice'
+import { useEffect } from 'react';
+import { deleteNoteThunk, fetchNotesThunk } from '../redux/features/noteSlice'
 
 export const Bin = () => {
   const dispatch = useDispatch();
   // const { bin } = useSelector((state) => state.paste);
   const { notes } = useSelector((state) => state.paste)
   const bin = notes.filter(n => n.isBin)
+
+  useEffect(() => {
+    dispatch(fetchNotesThunk({ page: 1, limit: 50, scope: 'bin' }));
+  }, [dispatch]);
 
   const copyFromClipboard = async (text) => {
     if (!navigator?.clipboard) {
@@ -30,8 +35,11 @@ export const Bin = () => {
   //   dispatch(deleteItem(id))
   // }
 
-  const handleBinDelete = (id) => {
-    dispatch(deleteNoteThunk(id))
+  const handleBinDelete = async (id) => {
+    const res = await dispatch(deleteNoteThunk(id))
+    if (deleteNoteThunk.fulfilled.match(res)) {
+      dispatch(fetchNotesThunk({ page: 1, limit: 50, scope: 'bin' }));
+    }
   }
 
   return (
