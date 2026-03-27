@@ -19,7 +19,7 @@ const saveNotes = async (req, res) => {
 
 const getNotes = async (req, res) => {
     const userId = req.user.id;
-const scope = req.query;
+const scope =( req.query.scope||'all').toLowerCase();
     try {
         let page = parseInt(req.query.page ?? req.params.page, 10);
         let limit = parseInt(req.query.limit ?? req.params.limit, 10);

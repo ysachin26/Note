@@ -56,14 +56,16 @@ const sharePaste = async (p) => {
 
 export const Pastes = () => {
 
-	const { notes, totalPages } = useSelector((state) => state.paste);
+	const { notes, totalPages, loading } = useSelector((state) => state.paste);
 	const dispatch = useDispatch();
 	const [searchValue, setSearchValue] = useState('');
 	//const [currentPage, setCurrentPage] = useState('');
 
 	const [Page, setPage] = useState(1);
-
-	// Fetch notes when page changes
+	const refetchPage = (pageNumber) => {
+		dispatch(fetchNotesThunk({ page: pageNumber, limit: 6, scope: "active" }))
+	}
+ 
 	useEffect(() => {
 		dispatch(fetchNotesThunk({ page: Page, limit: 6, scope: "active" }));
 	}, [Page, dispatch]);
@@ -80,6 +82,19 @@ export const Pastes = () => {
 	};
 
 	const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+
+	useEffect(() => {
+		if (totalPages > 0 && Page > totalPages) {
+			setPage(totalPages);
+		}
+	}, [Page, totalPages]);
+
+	useEffect(() => {
+		if (!loading && Page > 1 && notes.length === 0) {
+			setPage((prev) => prev - 1);
+		}
+	}, [notes.length, loading, Page]);
 
 
 	const filteredData = useMemo(() => {
@@ -117,8 +132,11 @@ export const Pastes = () => {
 	// };
 
 	// delete → move to bin  => new apporach
-	const deleteFromPaste = (id) => {
-		dispatch(updateNoteThunk({ id, data: { isBin: true } }))
+	const deleteFromPaste = async (id) => {
+		const res = await dispatch(updateNoteThunk({id,data: { isBin: true }}))
+	 if (updateNoteThunk.fulfilled.match(res)) {
+    refetchPage(Page);
+  }
 	}
 
 	// const pinItem = (id) => {
@@ -140,8 +158,11 @@ export const Pastes = () => {
 
 	// archive => new apporach
 
-	const makePasteArchieve = (id) => {
-		dispatch(updateNoteThunk({ id, data: { isArchived: true } }))
+	const makePasteArchieve = async (id) => {
+		const res = await dispatch(updateNoteThunk({ id, data: { isArchived: true } }))
+		if (updateNoteThunk.fulfilled.match(res)) {
+			refetchPage(Page)
+		}
 	}
 
 	// const handleimportantNotes = (id) => {
@@ -149,8 +170,11 @@ export const Pastes = () => {
 	// };
 
 	// important => new apporach
-	const handleimportantNotes = (id) => {
-		dispatch(updateNoteThunk({ id, data: { isImportant: true } }))
+	const handleimportantNotes = async (id) => {
+		const res = await dispatch(updateNoteThunk({ id, data: { isImportant: true } }))
+		if (updateNoteThunk.fulfilled.match(res)) {
+			refetchPage(Page)
+		}
 	}
 	return (
 		<div
@@ -314,7 +338,7 @@ export const Pastes = () => {
 						Next
 					</button>
 				</div>
-			</div>
+				</div>
 		</div>
 	);
 };
