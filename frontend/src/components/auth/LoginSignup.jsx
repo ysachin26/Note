@@ -19,6 +19,10 @@ export const LoginSignup = () => {
     const tabActive = 'bg-slate-200 text-slate-900'
     const tabIdle = 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
 
+    const navigateToResetPassword =()=>
+    {
+        navigate('/forgot-password');
+    }
     const handleSubmit = async (e) => {
         e.preventDefault()
         dispatch(clearError())
@@ -63,14 +67,14 @@ export const LoginSignup = () => {
                         <div className="flex rounded-md border border-slate-300 bg-white p-1">
                             <button
                                 type="button"
-                                className={`${tabBase} ${isLoginMode ? tabActive : tabIdle}`}
+                                className={`${tabBase} ${isLoginMode ? tabActive : tabIdle} cursor-pointer`}
                                 onClick={() => setIsLogin('Login')}
                             >
                                 Login
                             </button>
                             <button
                                 type="button"
-                                className={`${tabBase} ${!isLoginMode ? tabActive : tabIdle}`}
+                                className={`${tabBase} ${!isLoginMode ? tabActive : tabIdle} cursor-pointer`}
                                 onClick={() => setIsLogin('Signup')}
                             >
                                 Signup
@@ -151,16 +155,16 @@ export const LoginSignup = () => {
                         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
                             {isLoginMode ? (
                                 <>
-                                    <button
+                                    <button onClick={navigateToResetPassword}
                                         type="button"
-                                        className="font-semibold text-slate-700 transition hover:text-slate-900"
+                                        className="font-semibold cursor-pointer text-slate-700 transition hover:text-slate-900"
                                     >
                                         Forgot password?
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setIsLogin('Signup')}
-                                        className="font-semibold text-slate-700 transition hover:text-slate-900"
+                                        className="font-semibold cursor-pointer text-slate-700 transition hover:text-slate-900"
                                     >
                                         Need an account?
                                     </button>
@@ -171,7 +175,7 @@ export const LoginSignup = () => {
                                     <button
                                         type="button"
                                         onClick={() => setIsLogin('Login')}
-                                        className="font-semibold text-slate-700 transition hover:text-slate-900"
+                                        className="font-semibold cursor-pointer text-slate-700 transition hover:text-slate-900"
                                     >
                                         Login here
                                     </button>
