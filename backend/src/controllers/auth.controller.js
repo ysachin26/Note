@@ -228,6 +228,43 @@ async function verifyOtp(req, res) {
     await user.save();
     return res.status(200).json({ message: "otp verified" });
 }
+
+/**
+ * @param {import('express').Request<{}, any, { email: string }>} req
+ * @param {import('express').Response} res
+ * @returns
+ */
+async function resendRegisterOtp(req, res) {
+    try {
+        const { email } = req.body
+
+        if (!email) {
+            return res.status(400).json({ message: 'email is required' })
+        }
+
+        const user = await UserModel.findOne({ email })
+        if (!user) {
+            return res.status(404).json({ message: 'user not found' })
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: 'user already verified' })
+        }
+
+        const otp = generateOTP()
+        const hashedOtp = hashingOTP(otp)
+        user.otp = hashedOtp
+        user.otpExpire = new Date(Date.now() + 10 * 60 * 1000)
+        await user.save()
+
+        await sendOTP(email, String(otp))
+        return res.status(200).json({ message: 'OTP resent successfully' })
+    } catch (error) {
+        return res.status(400).json({
+            message: `Internal Server Error ${error}`,
+        })
+    }
+}
 /**
  * @param {import('express').Request<{}, any, RegisterBody>} req
  * @param {import('express').Response} res
@@ -355,5 +392,5 @@ const resetPassword = async (req, res) => {
 
 module.exports = {
     registerUser,
-    loginUser, logoutUser, verifyOtp, forgotPassword, verifyResetOtp, getMe, resetPassword
+    loginUser, logoutUser, verifyOtp, resendRegisterOtp, forgotPassword, verifyResetOtp, getMe, resetPassword
 }

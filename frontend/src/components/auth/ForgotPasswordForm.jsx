@@ -18,8 +18,10 @@ export const ForgotPasswordForm = () => {
     e.preventDefault();
     dispatch(clearError())
     const forgotPasswordAction =
+
       /** @type {(arg: { email: string }) => any} */
       (/** @type {unknown} */ (forgotPasswordThunk))
+      
     const result = /** @type {{ meta: { requestStatus?: string } }} */ (
       await dispatch(forgotPasswordAction({ email }))
     )
