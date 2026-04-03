@@ -20,48 +20,57 @@ export const ForgotPasswordForm = () => {
     }
     setEmail('')
   }
+
   return (
-    <div className='flex justify-center items-center h-screen w-screen    '>
+    <div
+      className="flex min-h-screen items-center justify-center bg-slate-200 px-6 py-10"
+      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+    >
+      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Password recovery
+          </p>
+          <h1
+            className="mt-3 text-3xl font-semibold text-slate-900"
+            style={{ fontFamily: "'Crimson Pro', serif" }}
+          >
+            Forgot password?
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Enter your email address and we will send an OTP to reset your password.
+          </p>
+        </div>
 
-      <div className='flex flex-col gap-4 rounded-md  border-2 focus:border-slate-500 focus:ring-1
-                                 focus:ring-slate-400/40 h-64 w-100 justify-center items-start'>
-        <div className=' text-left ml-7  
-                                text-center text-md font-semibold 
-                                text-slate-500 outline-none 
-                                focus:border-slate-500 focus:ring-1
-                                 focus:ring-slate-400/40'   style={{ fontFamily: "'Crimson Pro', serif" }}>Reset Password</div>
-
-        <form onSubmit={onsubmit}>
-          <div className='flex flex-row gap-4  w-100   items-center   justify-center'>
-            <div className='  rounded-md 
-                                border border-slate-300 bg-white 
-                                text-center text-xl font-semibold 
-                                text-slate-900 outline-none 
-                                focus:border-slate-500 focus:ring-1
-                                 focus:ring-slate-400/40  rounded-md p-2'>
-              <input className="   outline-hidden w-60 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 "
-                style={{ fontFamily: "'Crimson Pro', serif" }} placeholder="enter your email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                maxLength={50}
-                required />
-            </div>
-            <div className=' border cursor-pointer  p-2 rounded-md  rounded-md 
-                                border border-slate-300 bg-black 
-                                text-center text-xl font-semibold 
-                                text-slate-900 outline-none 
-                                focus:border-slate-500 focus:ring-1
-                                 focus:ring-slate-400/40 items-center justify-center' >
-              <button className="outline-hidden mb-2 text-xs font-semibold  cursor-pointer uppercase tracking-[0.2em] text-slate-500  text-white"
-                style={{ fontFamily: "'Crimson Pro', serif" }}  >
-                Submit</button>
-            </div>
+        <form onSubmit={onsubmit} className="mt-6 space-y-5">
+          <div>
+            <label
+              className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500"
+              htmlFor="forgot-email"
+            >
+              Email
+            </label>
+            <input
+              id="forgot-email"
+              className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
+              placeholder="you@notex.co"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              maxLength={50}
+              autoComplete="email"
+              required
+            />
           </div>
+
+          <button
+            className="w-full rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-400/60"
+            type="submit"
+          >
+            Send OTP
+          </button>
         </form>
-
       </div>
-
     </div>
   )
 }
