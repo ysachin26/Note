@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { verifyEmail } from '../../api/authApi'
+import { verifyEmail, verifyResetOtp } from '../../api/authApi'
 
 const OtpVerification = () => {
 
@@ -86,11 +86,14 @@ const OtpVerification = () => {
         }
 
         setIsVerifying(true)
-        verifyEmail(email, fullOtp)
+        const verifyRequest = purpose === 'reset'
+            ? verifyResetOtp(email, fullOtp)
+            : verifyEmail(email, fullOtp)
+
+        verifyRequest
             .then((response) => {
                 toast.success(response.data?.message || 'OTP verified')
                 if (purpose === 'reset') {
-                    localStorage.removeItem('pendingResetOtpEmail')
                     navigate('/reset-password', { state: { email } })
                 } else {
                     localStorage.removeItem('pendingOtpEmail')

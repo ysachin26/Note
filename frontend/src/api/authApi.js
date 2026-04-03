@@ -25,6 +25,12 @@ const verifyEmail = async (email, otp) => {
         otp
     })
 }
+const verifyResetOtp = async (email, otp) => {
+    return await axiosInstance.post('/auth/user/verify-reset-otp', {
+        email,
+        otp
+    })
+}
 const logoutUser = async () => {
     return await axiosInstance.get('/auth/user/logout');
 }
@@ -41,13 +47,14 @@ const forgotPassword = async (email) =>
     )
 }
 
-const resetPassword = async (password,email) =>
+const resetPassword = async (email, password) =>
 {
     return await axiosInstance.post('/auth/user/reset-password',
         {
-            password,email
+            email,
+            password
         }
     )
 }
 
-export { loginUser, registerUser, logoutUser, getMe, verifyEmail,forgotPassword,resetPassword }
+export { loginUser, registerUser, logoutUser, getMe, verifyEmail, verifyResetOtp, forgotPassword, resetPassword }

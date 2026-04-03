@@ -189,56 +189,117 @@ async function verifyOtp(req, res) {
 
 
 async function forgotPassword(req, res) {
-    const { email } = req.body;
+    try {
+        const { email } = req.body;
 
-    const validUser = await UserModel.findOne(
-        {
-            email
+        const validUser = await UserModel.findOne(
+            {
+                email
+            }
+        )
+        if (!validUser) {
+            return res.status(400).json({
+                message: "User does not exist"
+            })
         }
-    )
-    if (!validUser) {
+
+        const otp = generateOTP();
+        const hashedOTP = hashingOTP(otp)
+        validUser.otp = hashedOTP;
+        validUser.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+        validUser.resetOtpVerified = false;
+
+        await validUser.save();
+
+        await sendOTP(email, otp);
+
+        return res.status(200).json({
+            message: "OTP sent to your email"
+        })
+    } catch (error) {
         return res.status(400).json({
-            message: "User does not exist"
+            message: `Internal Server Error ${error}`,
         })
     }
-
-    const otp = generateOTP();
-    const hashedOTP = hashingOTP(otp)
-    validUser.otp = hashedOTP;
-    validUser.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
-
-    await validUser.save();
-
-    await sendOTP(email, otp);
-
-    return res.status(200).json({
-        message: "OTP sent to your email"
-    })
 
 
 }
 
- const resetPassword = async (req,res)=>
-{
-    const {email,password} = req.body;
-  const user = await  UserModel.findOne(
-        {
-            email
+async function verifyResetOtp(req, res) {
+    try {
+        const { email, otp } = req.body;
+
+        const user = await UserModel.findOne({ email })
+        if (!user) {
+            return res.status(404).json({ message: "user not found" });
         }
-    )
 
-    const hashedPassword = await bcrypt.hash(password,12);
+        if (!user.otp || !user.otpExpire) {
+            return res.status(400).json({ message: "otp not set" });
+        }
 
-user.password = hashedPassword;
-await user.save();
- return res.status(200).json({
-        message: "OTP sent to your email"
-    })
+        if (user.otpExpire < new Date()) {
+            return res.status(400).json({ message: "otp expired" });
+        }
 
+        const hashedOtp = hashingOTP(otp)
+        if (String(user.otp) !== String(hashedOtp)) {
+            return res.status(400).json({ message: "invalid otp" });
+        }
+
+        user.resetOtpVerified = true;
+        user.otp = undefined;
+        user.otpExpire = undefined;
+        await user.save();
+
+        return res.status(200).json({ message: "reset otp verified" });
+    } catch (error) {
+        return res.status(400).json({
+            message: `Internal Server Error ${error}`,
+        })
+    }
+}
+
+const resetPassword = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ message: "email and password are required" })
+        }
+
+        const user = await UserModel.findOne(
+            {
+                email
+            }
+        )
+
+        if (!user) {
+            return res.status(404).json({ message: "user not found" })
+        }
+
+        if (!user.resetOtpVerified) {
+            return res.status(403).json({ message: "verify reset otp first" })
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        user.password = hashedPassword;
+        user.resetOtpVerified = false;
+        user.otp = undefined;
+        user.otpExpire = undefined;
+        await user.save();
+        return res.status(200).json({
+            message: "password reset successful"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            message: `Internal Server Error ${error}`,
+        })
+    }
 }
 
 
 module.exports = {
     registerUser,
-    loginUser, logoutUser, verifyOtp, forgotPassword, getMe,resetPassword
+    loginUser, logoutUser, verifyOtp, forgotPassword, verifyResetOtp, getMe, resetPassword
 }

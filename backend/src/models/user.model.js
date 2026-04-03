@@ -25,6 +25,10 @@ const UserSchema = new Schema
             otpExpire: {
                 type: Date,
             },
+            resetOtpVerified: {
+                type: Boolean,
+                default: false,
+            },
             isVerified:
             {
                 type: Boolean,

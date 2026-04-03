@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useDispatch } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { clearError, resetPasswordThunk } from '../../redux/features/authSlice'
 
 
@@ -9,6 +9,7 @@ export const ResetPasswordForm = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
@@ -22,13 +23,19 @@ export const ResetPasswordForm = () => {
       return;
     }
     else {
-const email = JSON.parse(localStorage.getItem('user') || '{}');
-      const result = await dispatch(resetPasswordThunk({ password ,email}));
+      const email = location.state?.email || localStorage.getItem('pendingResetOtpEmail') || '';
+      if (!email) {
+        toast.error('Email is missing. Please start reset flow again')
+        navigate('/forgot-password')
+        return
+      }
+
+      const result = await dispatch(resetPasswordThunk({ password, email }));
       if (result.meta.requestStatus ===
         'fulfilled'
 
       ) {
-        console.log(password)
+        localStorage.removeItem('pendingResetOtpEmail')
         toast.success("password changed successfully")
         navigate('/login')
       }

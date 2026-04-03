@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { loginUser, registerUser, getMe, logoutUser, forgotPassword,resetPassword } from '../../api/authApi'
+import { loginUser, registerUser, getMe, logoutUser, forgotPassword, resetPassword } from '../../api/authApi'
 
 
 export const loginThunk = createAsyncThunk('auth/login', async ({ email, password }, { rejectWithValue }) => {
@@ -41,9 +41,9 @@ export const forgotPasswordThunk = createAsyncThunk('auth/forgot-password', asyn
     }
 })
 
-export const resetPasswordThunk = createAsyncThunk('auth/reset-password', async ({ password ,email}, { rejectWithValue }) => {
+export const resetPasswordThunk = createAsyncThunk('auth/reset-password', async ({ password, email }, { rejectWithValue }) => {
     try {
-        const response = await resetPassword(password,email);
+        const response = await resetPassword(email, password);
         return response.data
     } catch (error) {
         return rejectWithValue(error?.response?.data?.message || 'Failed to set new password')
