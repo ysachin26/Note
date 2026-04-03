@@ -1,6 +1,6 @@
 
-import React from 'react'
-import { useState, useRef } from 'react'
+
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { verifyEmail } from '../../api/authApi'
@@ -12,7 +12,38 @@ const OtpVerification = () => {
     const inputRefs = useRef([]);
     const navigate = useNavigate()
     const location = useLocation()
-    const email = location.state?.email || localStorage.getItem('pendingOtpEmail') || ''
+    const flowFromState = location.state?.purpose
+    const hasResetEmail = !!localStorage.getItem('pendingResetOtpEmail')
+    const purpose = flowFromState || (hasResetEmail ? 'reset' : 'register')
+    const email = location.state?.email
+        || localStorage.getItem(purpose === 'reset' ? 'pendingResetOtpEmail' : 'pendingOtpEmail')
+        || ''
+
+    useEffect(() => {
+        if (!location.state?.email) {
+            return
+        }
+
+        if (purpose === 'reset') {
+            localStorage.setItem('pendingResetOtpEmail', location.state.email)
+        } else {
+            localStorage.setItem('pendingOtpEmail', location.state.email)
+        }
+    }, [location.state?.email, purpose])
+
+    const copy = purpose === 'reset'
+        ? {
+            eyebrow: 'Reset password',
+            title: 'Verify reset OTP',
+            description: 'Enter the 6-digit code sent to your email to continue password reset.',
+            missingEmail: 'Email is missing. Please start reset password again.'
+        }
+        : {
+            eyebrow: 'Secure login',
+            title: 'Enter the OTP',
+            description: 'Use the 6-digit code sent to your email.',
+            missingEmail: 'Email is missing. Please signup again.'
+        }
 
 
     const handleChange = (element, index) => {
@@ -44,8 +75,8 @@ const OtpVerification = () => {
 
         const fullOtp = otp.join("");
         if (!email) {
-            toast.error('Email is missing. Please signup again.')
-            navigate('/login')
+            toast.error(copy.missingEmail)
+            navigate(purpose === 'reset' ? '/forgot-password' : '/login')
             return
         }
 
@@ -58,8 +89,13 @@ const OtpVerification = () => {
         verifyEmail(email, fullOtp)
             .then((response) => {
                 toast.success(response.data?.message || 'OTP verified')
-                localStorage.removeItem('pendingOtpEmail')
-                navigate('/login')
+                if (purpose === 'reset') {
+                    localStorage.removeItem('pendingResetOtpEmail')
+                    navigate('/reset-password', { state: { email } })
+                } else {
+                    localStorage.removeItem('pendingOtpEmail')
+                    navigate('/login')
+                }
             })
             .catch((error) => {
                 toast.error(error?.response?.data?.message || 'Failed to verify OTP')
@@ -78,16 +114,16 @@ const OtpVerification = () => {
             <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
                 <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                        Secure login
+                        {copy.eyebrow}
                     </p>
                     <h1
                         className="mt-3 text-3xl font-semibold text-slate-900"
                         style={{ fontFamily: "'Crimson Pro', serif" }}
                     >
-                        Enter the OTP
+                        {copy.title}
                     </h1>
                     <p className="mt-2 text-sm text-slate-600">
-                        Use the 6-digit code sent to <span className="font-semibold text-slate-800">your email</span>.
+                        {copy.description}
                     </p>
                 </div>
                 <form className="mt-6 space-y-5" onSubmit={handleSubmit}>

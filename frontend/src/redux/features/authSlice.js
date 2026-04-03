@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { loginUser, registerUser, getMe, logoutUser } from '../../api/authApi'
+import { loginUser, registerUser, getMe, logoutUser, forgotPassword } from '../../api/authApi'
 
 
 export const loginThunk = createAsyncThunk('auth/login', async ({ email, password }, { rejectWithValue }) => {
@@ -28,11 +28,18 @@ export const fetchMeThunk = createAsyncThunk('auth/me', async () => {
 })
 
 export const logOutThunk = createAsyncThunk('auth/logout', async () => {
-   await logoutUser()
+    await logoutUser()
     return null
 })
 
- 
+export const forgotPasswordThunk = createAsyncThunk('auth/forgot-password', async ({ email }, { rejectWithValue }) => {
+    try {
+        const response = await forgotPassword(email);
+        return response.data
+    } catch (error) {
+        return rejectWithValue(error?.response?.data?.message || 'Failed to send forgot password OTP')
+    }
+})
 const authSlice = createSlice({
     name: 'auth',
     initialState: { user: null, loading: false, error: null, initialized: false },
@@ -54,7 +61,7 @@ const authSlice = createSlice({
                 state.error = action.payload
                 state.initialized = true
             })
-                   .addCase(registerThunk.pending, (state) => {
+            .addCase(registerThunk.pending, (state) => {
                 state.loading = true
             })
             .addCase(registerThunk.fulfilled, (state) => {
@@ -89,6 +96,18 @@ const authSlice = createSlice({
                 state.loading = true
             })
             .addCase(logOutThunk.fulfilled, (state) => {
+                state.loading = false
+                state.user = null
+                state.initialized = true
+            }).addCase(forgotPasswordThunk.rejected, (state) => {
+                state.loading = false
+                state.user = null
+                state.initialized = true
+            })
+            .addCase(forgotPasswordThunk.pending, (state) => {
+                state.loading = true
+            })
+            .addCase(forgotPasswordThunk.fulfilled, (state) => {
                 state.loading = false
                 state.user = null
                 state.initialized = true

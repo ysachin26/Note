@@ -1,9 +1,9 @@
 const UserModel = require('../models/user.model')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-
 const sendOTP = require('../service/sendOTP.js')
 const generateOTP = require('../utility/generateOTP.js')
+const hashingOTP = require('../utility/hashingOTP.js')
 const dotenv = require('dotenv')
 dotenv.config()
 
@@ -24,7 +24,8 @@ async function registerUser(req, res) {
             // If account exists but email not verified, resend OTP instead of blocking
             if (!isUserAlreadyExist.isVerified) {
                 const otp = generateOTP();
-                isUserAlreadyExist.otp = otp;
+                const hashedOtp = hashingOTP(otp)
+                isUserAlreadyExist.otp = hashedOtp;
                 isUserAlreadyExist.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
                 await isUserAlreadyExist.save();
                 await sendOTP(email, otp);
@@ -39,6 +40,7 @@ async function registerUser(req, res) {
 
         //otp generation
         const otp = generateOTP();
+        const hashedOtp = hashingOTP(otp)
         //hashing password before registering a user
         const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -47,7 +49,7 @@ async function registerUser(req, res) {
                 name,
                 email,
                 password: hashedPassword,
-                otp: otp,
+                otp: hashedOtp,
                 otpExpire: new Date(Date.now() + 10 * 60 * 1000)
             }
         )
@@ -174,7 +176,8 @@ async function verifyOtp(req, res) {
         return res.status(400).json({ message: "otp expired" });
 
 
-    if (String(user.otp) !== String(otp))
+    const hashedOtp = hashingOTP(otp)
+    if (String(user.otp) !== String(hashedOtp))
         return res.status(400).json({ message: "invalid otp" });
 
     user.isVerified = true;
@@ -184,8 +187,39 @@ async function verifyOtp(req, res) {
     return res.status(200).json({ message: "otp verified" });
 }
 
+
+async function forgotPassword(req, res) {
+    const { email } = req.body;
+
+    const validUser = await UserModel.findOne(
+        {
+            email
+        }
+    )
+    if (!validUser) {
+        return res.status(400).json({
+            message: "User does not exist"
+        })
+    }
+
+    const otp = generateOTP();
+    const hashedOTP = hashingOTP(otp)
+    validUser.otp = hashedOTP;
+    validUser.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+
+    await validUser.save();
+
+    await sendOTP(email, otp);
+
+    return res.status(200).json({
+        message: "OTP sent to your email"
+    })
+
+
+}
+
+
 module.exports = {
     registerUser,
-    loginUser, logoutUser, verifyOtp,
-    getMe
+    loginUser, logoutUser, verifyOtp, forgotPassword, getMe
 }

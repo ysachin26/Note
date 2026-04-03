@@ -19,8 +19,7 @@ export const LoginSignup = () => {
     const tabActive = 'bg-slate-200 text-slate-900'
     const tabIdle = 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
 
-    const navigateToResetPassword =()=>
-    {
+    const navigateToResetPassword = () => {
         navigate('/forgot-password');
     }
     const handleSubmit = async (e) => {
@@ -38,7 +37,7 @@ export const LoginSignup = () => {
             const result = await dispatch(registerThunk({ name, email, password }))
             if (result.meta.requestStatus === 'fulfilled') {
                 localStorage.setItem('pendingOtpEmail', email)
-                navigate('/verify', { state: { email } })
+                navigate('/verify', { state: { email, purpose: 'register' } })
             }
         }
     }

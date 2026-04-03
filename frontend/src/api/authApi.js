@@ -32,4 +32,13 @@ const getMe = async () => {
     return await axiosInstance.get('/auth/user/me')
 }
 
-export { loginUser, registerUser, logoutUser, getMe, verifyEmail }
+const forgotPassword = async (email) =>
+{
+    return await axiosInstance.post('/auth/user/forgot-password',
+        {
+            email
+        }
+    )
+}
+
+export { loginUser, registerUser, logoutUser, getMe, verifyEmail,forgotPassword }

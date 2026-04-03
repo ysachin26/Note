@@ -1,11 +1,23 @@
 import React, { useState } from 'react'
+import { useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { clearError, forgotPasswordThunk } from '../../redux/features/authSlice'
 
 export const ForgotPasswordForm = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
-  const onsubmit = (e) => {
+  const onsubmit = async (e) => {
     e.preventDefault();
-    console.log(email);
+    dispatch(clearError())
+    const result = await dispatch(forgotPasswordThunk({ email }))
+    if (result.meta.requestStatus ===
+      'fulfilled'
+    ) {
+      localStorage.setItem('pendingResetOtpEmail', email)
+      navigate('/verify', { state: { email, purpose: 'reset' } })
+    }
     setEmail('')
   }
   return (
@@ -28,11 +40,11 @@ export const ForgotPasswordForm = () => {
                                 focus:border-slate-500 focus:ring-1
                                  focus:ring-slate-400/40  rounded-md p-2'>
               <input className="   outline-hidden w-60 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 "
-                style={{ fontFamily: "'Crimson Pro', serif" }} placeholder="enter your email" 
+                style={{ fontFamily: "'Crimson Pro', serif" }} placeholder="enter your email"
                 type="email"
-                 value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                maxLength={20} 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={50}
                 required />
             </div>
             <div className=' border cursor-pointer  p-2 rounded-md  rounded-md 

@@ -8,4 +8,5 @@ router.post('/user/login', authController.loginUser)
 router.get('/user/logout', authController.logoutUser)
 router.get('/user/me', authMiddleware, authController.getMe)
 router.post('/user/verify-otp', authController.verifyOtp)
+router.post('/user/forgot-password', authController.forgotPassword)
 module.exports = router
