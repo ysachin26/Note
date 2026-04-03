@@ -1,17 +1,28 @@
+// @ts-check
+
 import React, { useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { clearError, forgotPasswordThunk } from '../../redux/features/authSlice'
 
 export const ForgotPasswordForm = () => {
+  /** @type {import('@reduxjs/toolkit').ThunkDispatch<any, any, import('@reduxjs/toolkit').AnyAction>} */
   const dispatch = useDispatch();
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
-  const onsubmit = async (e) => {
+  /**
+   *  @param {import('react').SubmitEvent<HTMLFormElement>} e 
+   */
+  const onSubmit = async (e) => {
     e.preventDefault();
     dispatch(clearError())
-    const result = await dispatch(forgotPasswordThunk({ email }))
+    const forgotPasswordAction =
+      /** @type {(arg: { email: string }) => any} */
+      (/** @type {unknown} */ (forgotPasswordThunk))
+    const result = /** @type {{ meta: { requestStatus?: string } }} */ (
+      await dispatch(forgotPasswordAction({ email }))
+    )
     if (result.meta.requestStatus ===
       'fulfilled'
     ) {
@@ -42,7 +53,7 @@ export const ForgotPasswordForm = () => {
           </p>
         </div>
 
-        <form onSubmit={onsubmit} className="mt-6 space-y-5">
+        <form onSubmit={onSubmit} className="mt-6 space-y-5">
           <div>
             <label
               className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500"

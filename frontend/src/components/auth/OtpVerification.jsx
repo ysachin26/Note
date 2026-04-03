@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { verifyEmail, verifyResetOtp } from '../../api/authApi'
+const OTP_RESEND_SECONDS = 15;
 
 const OtpVerification = () => {
 
     const [otp, setOtp] = useState(["", "", "", "", "", ""])
+    const [seconds, setSeconds] = useState(OTP_RESEND_SECONDS);
     const [isVerifying, setIsVerifying] = useState(false)
     const inputRefs = useRef([]);
     const navigate = useNavigate()
@@ -18,6 +20,39 @@ const OtpVerification = () => {
     const email = location.state?.email
         || localStorage.getItem(purpose === 'reset' ? 'pendingResetOtpEmail' : 'pendingOtpEmail')
         || ''
+    const resendExpiryKey = `otpResendExpiry_${purpose}`
+    //timer logic for otp resend
+
+    useEffect(() => {
+
+        const now = Date.now();
+        const savedExpiry = Number(localStorage.getItem(resendExpiryKey));
+        if (!savedExpiry) {
+            localStorage.setItem(
+                resendExpiryKey,
+                String(now + OTP_RESEND_SECONDS * 1000)
+            )
+        }
+
+        const updateSeconds = () => {
+            const currentExpiry = Number(localStorage.getItem(resendExpiryKey))
+            const remaining = Math.max(0, Math.ceil((currentExpiry - Date.now()) / 1000));
+            setSeconds(remaining)
+        }
+        updateSeconds()
+        const intervalId = setInterval(updateSeconds, 1000)
+        return () => clearInterval(intervalId)
+    }, [resendExpiryKey]);
+
+    function resendOTP() {
+        if (seconds > 0) {
+            return;
+        }
+        //updating everysecond
+        const newExpiry = Date.now() + OTP_RESEND_SECONDS * 1000;
+        localStorage.setItem(resendExpiryKey, String(newExpiry));
+        setSeconds(OTP_RESEND_SECONDS)
+    }
 
     useEffect(() => {
         if (!location.state?.email) {
@@ -61,7 +96,7 @@ const OtpVerification = () => {
 
 
     }
-
+ 
     function handleKeyDown(e, index) {
 
         if (e.key === "Backspace" && otp[index] === "" && index > 0) {
@@ -107,6 +142,7 @@ const OtpVerification = () => {
                 setIsVerifying(false)
             })
     };
+
 
 
     return (
@@ -170,11 +206,14 @@ const OtpVerification = () => {
 
                     <div className="flex items-center justify-between text-xs text-slate-500">
                         <span>Did not receive it?</span>
-                        <button
-                            type="button"
-                            className="font-semibold text-slate-700 transition hover:text-slate-900"
+                        <button disabled={seconds > 0}
+                            type="button" onClick={resendOTP}
+                            className={seconds <= 0
+                                ? "font-semibold text-slate-700 hover:text-slate-900 cursor-pointer"
+                                : "font-semibold text-slate-400 cursor-not-allowed"}
                         >
-                            Resend code
+                            {seconds === 0 ? 'Resend OTP' : ` Resend OTP in ${seconds}s`}
+
                         </button>
                     </div>
                 </form>

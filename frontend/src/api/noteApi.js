@@ -1,5 +1,12 @@
-import axiosInstance from "./axiosInstance";
+// @ts-check
 
+import axiosInstance from "./axiosInstance";
+/**
+ * 
+ * @param {string} title 
+ * @param {string} description 
+ *  
+ */
 const createNote = async (title, description) => {
     return await axiosInstance.post('/notes',
         {
@@ -18,12 +25,22 @@ const fetchNotes = async (page = 1, limit = 6, scope = 'all') => {
         }
     })
 }
-
+/**
+ * 
+ * @param {string} id 
+ * @param {string} data 
+ * @returns 
+ */
 const updateNote = async (id, data) => {
     return await axiosInstance.patch(`/notes/${id}`, data
     )
 }
-
+ /**
+ * 
+ * @param {string} id 
+ 
+ 
+ */
 const deleteNote = async (id) => {
     return await axiosInstance.delete(`/notes/${id}`)
 }

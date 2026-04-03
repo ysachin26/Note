@@ -1,3 +1,5 @@
+// @ts-check
+
 const UserModel = require('../models/user.model')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
@@ -7,10 +9,24 @@ const hashingOTP = require('../utility/hashingOTP.js')
 const dotenv = require('dotenv')
 dotenv.config()
 
+/**
+ * @typedef {{ name: string, email: string, password: string, otp?: string }} RegisterBody
+ * @typedef {{ id: string }} AuthUser
+ * @typedef {import('express').Request & { user?: AuthUser }} AuthenticatedRequest
+ */
 
+/**
+ * @param {import('express').Request<{}, any, RegisterBody>} req
+ * @param {import('express').Response} res
+ *  
+ * @returns 
+ */
 async function registerUser(req, res) {
 
     try {
+
+
+
         const { name, email, password } = req.body;
 
         const isUserAlreadyExist = await UserModel.findOne(
@@ -28,7 +44,7 @@ async function registerUser(req, res) {
                 isUserAlreadyExist.otp = hashedOtp;
                 isUserAlreadyExist.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
                 await isUserAlreadyExist.save();
-                await sendOTP(email, otp);
+                await sendOTP(email, String(otp));
                 return res.status(200).json({
                     message: "Account exists but not verified. A new OTP has been sent to your email."
                 })
@@ -54,7 +70,7 @@ async function registerUser(req, res) {
             }
         )
 
-        await sendOTP(email, otp);
+        await sendOTP(email, String(otp));
 
         // No cookie here — user must verify OTP before getting a session
         res.status(201).json(
@@ -72,6 +88,12 @@ async function registerUser(req, res) {
 
 }
 
+/**
+ * 
+ * @param {import('express').Request<{},any , RegisterBody>} req 
+ * @param {import('express').Response} res 
+ * @returns 
+ */
 async function loginUser(req, res) {
 
     try {
@@ -107,10 +129,18 @@ async function loginUser(req, res) {
             })
         }
 
+        const jwtSecret = process.env.JWT_SECRET
+        if (!jwtSecret) {
+            return res.status(500).json({
+                message: "JWT_SECRET is not configured"
+            })
+        }
+
         const token = jwt.sign(
             {
                 id: user._id,
-            }, process.env.JWT_SECRET
+            },
+            jwtSecret
         )
 
         res.cookie("token", token)
@@ -132,14 +162,22 @@ async function loginUser(req, res) {
             })
     }
 }
-
+/**
+ * @param {import('express').Request<{}, any, RegisterBody>} req
+ * @param {import('express').Response} res
+ * @returns 
+ */
 function logoutUser(req, res) {
     res.clearCookie("token");
     res.status(200).json({
         message: "user logged out successfully"
     })
 }
-
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {import('express').Response} res
+ * @returns 
+ */
 async function getMe(req, res) {
     try {
         if (!req.user || !req.user.id) {
@@ -156,7 +194,11 @@ async function getMe(req, res) {
         return res.status(400).json({ message: `Internal Server Error ${error}` })
     }
 }
-
+/**
+ * @param {import('express').Request<{}, any, RegisterBody>} req
+ * @param {import('express').Response} res
+ * @returns 
+ */
 async function verifyOtp(req, res) {
 
     const { email, otp } = req.body;
@@ -186,7 +228,11 @@ async function verifyOtp(req, res) {
     await user.save();
     return res.status(200).json({ message: "otp verified" });
 }
-
+/**
+ * @param {import('express').Request<{}, any, RegisterBody>} req
+ * @param {import('express').Response} res
+ * @returns 
+ */
 
 async function forgotPassword(req, res) {
     try {
@@ -211,7 +257,7 @@ async function forgotPassword(req, res) {
 
         await validUser.save();
 
-        await sendOTP(email, otp);
+        await sendOTP(email, String(otp));
 
         return res.status(200).json({
             message: "OTP sent to your email"
@@ -224,7 +270,11 @@ async function forgotPassword(req, res) {
 
 
 }
-
+/**
+ * @param {import('express').Request<{}, any, RegisterBody>} req
+ * @param {import('express').Response} res
+ * @returns 
+ */
 async function verifyResetOtp(req, res) {
     try {
         const { email, otp } = req.body;
@@ -259,7 +309,11 @@ async function verifyResetOtp(req, res) {
         })
     }
 }
-
+/**
+ * @param {import('express').Request<{}, any, RegisterBody>} req
+ * @param {import('express').Response} res
+ * @returns 
+ */
 const resetPassword = async (req, res) => {
     try {
         const { email, password } = req.body;

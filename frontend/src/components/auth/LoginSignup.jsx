@@ -1,8 +1,9 @@
+// @ts-check
+
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { loginThunk, registerThunk, clearError } from '../../redux/features/authSlice'
 import { useState } from 'react'
-
 
 
 export const LoginSignup = () => {
@@ -10,9 +11,16 @@ export const LoginSignup = () => {
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    /** @type {import('@reduxjs/toolkit').ThunkDispatch<any, any, import('@reduxjs/toolkit').AnyAction>} */
     const dispatch = useDispatch()
     const navigate = useNavigate()
-    const { error } = useSelector((state) => state.auth)
+
+    const { error } = useSelector(
+        /**
+         * @param {{ auth: { error: string | null } }} state
+         */
+        (state) => state.auth
+    )
     const isLoginMode = isLogin === 'Login'
     const tabBase =
         'rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition'
@@ -22,11 +30,19 @@ export const LoginSignup = () => {
     const navigateToResetPassword = () => {
         navigate('/forgot-password');
     }
+    /**
+     * @param {import('react').SubmitEvent<HTMLFormElement>} e
+     */
     const handleSubmit = async (e) => {
         e.preventDefault()
         dispatch(clearError())
         if (isLogin === 'Login') {
-            const result = await dispatch(loginThunk({ email, password }))
+            const loginAction =
+                /** @type {(arg: { email: string, password: string }) => any} */
+                (/** @type {unknown} */ (loginThunk))
+            const result = /** @type {{ meta: { requestStatus?: string } }} */ (
+                await dispatch(loginAction({ email, password }))
+            )
             if (result.meta.requestStatus ===
                 'fulfilled'
             ) {
@@ -34,7 +50,15 @@ export const LoginSignup = () => {
             }
         }
         else {
-            const result = await dispatch(registerThunk({ name, email, password }))
+            const registerAction =
+
+                /** @type {(arg: { name: string, email: string, password: string }) => any} */
+
+                (/** @type {unknown} */ (registerThunk))
+                
+            const result = /** @type {{ meta: { requestStatus?: string } }} */ (
+                await dispatch(registerAction({ name, email, password }))
+            )
             if (result.meta.requestStatus === 'fulfilled') {
                 localStorage.setItem('pendingOtpEmail', email)
                 navigate('/verify', { state: { email, purpose: 'register' } })

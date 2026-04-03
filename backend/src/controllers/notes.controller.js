@@ -1,9 +1,32 @@
+//@ts-check
+
 const noteModel = require('../models/notes.model')
 const { Types } = require('mongoose')
 
+/**
+ * @typedef {{ title: string, description: string }} CreateNoteBody
+ * @typedef {{ title?: string, description?: string, isArchived?: boolean, isImportant?: boolean, isBin?: boolean }} UpdateNoteBody
+ * @typedef {{ id: string }} IdParams
+ * @typedef {{ page?: string, limit?: string, scope?: string }} NotesQuery
+ * @typedef {{ id: string }} AuthUser
+ * @typedef {import('express').Request & { user?: AuthUser }} AuthenticatedRequest
+ */
+
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {import('express').Response} res
+ *  
+ *@returns {Promise<import('express').Response | void>}
+ */
+
 const saveNotes = async (req, res) => {
+
     try {
-        const { title, description } = req.body;
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: 'login first' })
+        }
+
+        const { title, description } = /** @type {CreateNoteBody} */ (req.body);
         const userId = req.user.id;
         const note = await noteModel.create({ userId, title, description });
 
@@ -16,42 +39,51 @@ const saveNotes = async (req, res) => {
         return res.status(500).json({ message: 'Internal Server Error' })
     }
 }
-
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {import('express').Response} res
+ * @returns {Promise<import('express').Response | void>}
+ */
 const getNotes = async (req, res) => {
+    if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: 'login first' })
+    }
+
     const userId = req.user.id;
-const scope =( req.query.scope||'all').toLowerCase();
+    const query = /** @type {NotesQuery} */ (req.query)
+    const scope = (query.scope || 'all').toLowerCase();
     try {
-        let page = parseInt(req.query.page ?? req.params.page, 10);
-        let limit = parseInt(req.query.limit ?? req.params.limit, 10);
+        let page = parseInt(query.page ?? '1', 10);
+        let limit = parseInt(query.limit ?? '6', 10);
 
         if (isNaN(page) || page < 1) page = 1;
         if (isNaN(limit) || limit < 1) limit = 6;
-     let skip = (page - 1) * limit;
+        let skip = (page - 1) * limit;
         //base filter
-        const match = {userId:new Types.ObjectId(userId)};
+        /** @type {{ userId: import('mongoose').Types.ObjectId, isArchived?: boolean | { $ne: true }, isImportant?: boolean | { $ne: true }, isBin?: boolean | { $ne: true } }} */
+        const match = { userId: new Types.ObjectId(userId) };
 
         //scope filter
-        switch(scope)
-        {
+        switch (scope) {
             case 'active':
-            match.isArchived = {$ne:true};
-            match.isImportant = {$ne:true};
-              match.isBin = { $ne: true };
-              break;
+                match.isArchived = { $ne: true };
+                match.isImportant = { $ne: true };
+                match.isBin = { $ne: true };
+                break;
 
-              case 'archived':
-                 match.isArchived = true;
-        break; case 'bin':
-        match.isBin = true;
-        break; case 'important':
-        match.isImportant = true;
-        break; case 'all':
-      default:
-        // no extra filter
-        break;
+            case 'archived':
+                match.isArchived = true;
+                break; case 'bin':
+                match.isBin = true;
+                break; case 'important':
+                match.isImportant = true;
+                break; case 'all':
+            default:
+                // no extra filter
+                break;
         }
 
-   
+
 
         const allNotes = await noteModel.aggregate([
             {
@@ -86,12 +118,21 @@ const scope =( req.query.scope||'all').toLowerCase();
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
-
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {import('express').Response} res
+ * @returns {Promise<import('express').Response | void>}
+ */
 const updateNote = async (req, res) => {
 
     try {
-        const id = req.params.id;
-        const updatedNote = await noteModel.findOneAndUpdate({ _id: id, userId: req.user.id }, req.body,
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: 'login first' })
+        }
+
+        const { id } = /** @type {IdParams} */ (req.params);
+        const payload = /** @type {UpdateNoteBody} */ (req.body)
+        const updatedNote = await noteModel.findOneAndUpdate({ _id: id, userId: req.user.id }, payload,
             { new: true })
         return res.status(200).json({
             message: 'notes updated successfully',
@@ -103,10 +144,18 @@ const updateNote = async (req, res) => {
         return res.status(500).json({ message: 'Internal Server Error', error })
     }
 }
-
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {import('express').Response} res
+ * @returns {Promise<import('express').Response | void>}
+ */
 const deleteNote = async (req, res) => {
     try {
-        const id = req.params.id;
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: 'login first' })
+        }
+
+        const { id } = /** @type {IdParams} */ (req.params);
         const deletedNotes = await noteModel.findOneAndDelete({ _id: id, userId: req.user.id }
         )
         return res.status(200).json({
