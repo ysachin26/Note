@@ -218,8 +218,27 @@ async function forgotPassword(req, res) {
 
 }
 
+ const resetPassword = async (req,res)=>
+{
+    const {email,password} = req.body;
+  const user = await  UserModel.findOne(
+        {
+            email
+        }
+    )
+
+    const hashedPassword = await bcrypt.hash(password,12);
+
+user.password = hashedPassword;
+await user.save();
+ return res.status(200).json({
+        message: "OTP sent to your email"
+    })
+
+}
+
 
 module.exports = {
     registerUser,
-    loginUser, logoutUser, verifyOtp, forgotPassword, getMe
+    loginUser, logoutUser, verifyOtp, forgotPassword, getMe,resetPassword
 }

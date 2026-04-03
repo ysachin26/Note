@@ -9,4 +9,5 @@ router.get('/user/logout', authController.logoutUser)
 router.get('/user/me', authMiddleware, authController.getMe)
 router.post('/user/verify-otp', authController.verifyOtp)
 router.post('/user/forgot-password', authController.forgotPassword)
+router.post('/user/reset-password', authController.resetPassword)
 module.exports = router

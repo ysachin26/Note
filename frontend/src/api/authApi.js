@@ -41,4 +41,13 @@ const forgotPassword = async (email) =>
     )
 }
 
-export { loginUser, registerUser, logoutUser, getMe, verifyEmail,forgotPassword }
+const resetPassword = async (password,email) =>
+{
+    return await axiosInstance.post('/auth/user/reset-password',
+        {
+            password,email
+        }
+    )
+}
+
+export { loginUser, registerUser, logoutUser, getMe, verifyEmail,forgotPassword,resetPassword }

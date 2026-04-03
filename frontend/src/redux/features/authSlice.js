@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { loginUser, registerUser, getMe, logoutUser, forgotPassword } from '../../api/authApi'
+import { loginUser, registerUser, getMe, logoutUser, forgotPassword,resetPassword } from '../../api/authApi'
 
 
 export const loginThunk = createAsyncThunk('auth/login', async ({ email, password }, { rejectWithValue }) => {
@@ -38,6 +38,15 @@ export const forgotPasswordThunk = createAsyncThunk('auth/forgot-password', asyn
         return response.data
     } catch (error) {
         return rejectWithValue(error?.response?.data?.message || 'Failed to send forgot password OTP')
+    }
+})
+
+export const resetPasswordThunk = createAsyncThunk('auth/reset-password', async ({ password ,email}, { rejectWithValue }) => {
+    try {
+        const response = await resetPassword(password,email);
+        return response.data
+    } catch (error) {
+        return rejectWithValue(error?.response?.data?.message || 'Failed to set new password')
     }
 })
 const authSlice = createSlice({
@@ -108,6 +117,19 @@ const authSlice = createSlice({
                 state.loading = true
             })
             .addCase(forgotPasswordThunk.fulfilled, (state) => {
+                state.loading = false
+                state.user = null
+                state.initialized = true
+            })
+            .addCase(resetPasswordThunk.rejected, (state) => {
+                state.loading = false
+                state.user = null
+                state.initialized = true
+            })
+            .addCase(resetPasswordThunk.pending, (state) => {
+                state.loading = true
+            })
+            .addCase(resetPasswordThunk.fulfilled, (state) => {
                 state.loading = false
                 state.user = null
                 state.initialized = true
