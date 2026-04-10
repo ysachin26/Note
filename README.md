@@ -30,12 +30,13 @@ npm install
 
 # Run the development server
 npm run dev
+```
 
+## 📜 License
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
-📜 License
-This project is licensed under the MIT License.
- 
-#👨‍💻 Author  
-Sachin Yadav 
-📧tocontactsy@gmail.com
+## 👨‍💻 Author
+Sachin Yadav
+
+📧 tocontactsy@gmail.com
 

@@ -24,3 +24,7 @@ build/
 # logs
 logs
 *.log
+
+#file
+*.cpp
+*.exe
