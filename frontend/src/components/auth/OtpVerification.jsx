@@ -55,6 +55,7 @@ const OtpVerification = () => {
         }
 
         try {
+
             setIsResending(true)
             const response = purpose === 'reset'
                 ? await forgotPassword(email)
@@ -100,6 +101,25 @@ const OtpVerification = () => {
             missingEmail: 'Email is missing. Please signup again.'
         }
 
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const length = otp.length;
+
+        // Get OTP digits from clipboard and ignore all non-numeric characters.
+        const pasted = e.clipboardData
+            .getData("text").trim()
+            .replace(/\D/g, "")
+            .slice(0, length);
+
+        if (!pasted) return;
+
+        const next = Array(length).fill("");
+        pasted.split("").forEach((d, i) => (next[i] = d));
+        setOtp(next);
+
+        const lastFilled = Math.min(pasted.length - 1, length - 1);
+        inputRefs.current[lastFilled]?.focus();
+    }
 
     const handleChange = (element, index) => {
         const value = element.value.replace(/\D/g, '').slice(-1)
@@ -111,10 +131,6 @@ const OtpVerification = () => {
         if (value !== "" && index < otp.length - 1) {
             inputRefs.current[index + 1]?.focus();
         }
-
-
-
-
     }
 
     function handleKeyDown(e, index) {
@@ -190,11 +206,12 @@ const OtpVerification = () => {
                         {otp.map((digit, index) => (
 
                             <input
+                                onPaste={handlePaste}
                                 key={index}
                                 value={digit}
                                 type="text"
                                 autoFocus={index === 0}
-                                aria-label="OTP digit 1"
+                                aria-label={`OTP digit ${index + 1}`}
                                 inputMode="numeric"
                                 pattern="[0-9]*"
                                 maxLength={1}

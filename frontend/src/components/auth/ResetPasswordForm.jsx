@@ -42,6 +42,7 @@ export const ResetPasswordForm = () => {
     }
   }
 
+  
   return (
     <div
       className="flex min-h-screen items-center justify-center bg-slate-200 px-6 py-10"
