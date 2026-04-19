@@ -214,8 +214,8 @@ const initialState = {
    error: null
 }
 
-export const fetchNotesThunk = createAsyncThunk('notes/fetch', async ({page = 1, limit = 6, scope = 'all'}={}) => {
-   const response = await fetchNotes(page, limit,scope)
+export const fetchNotesThunk = createAsyncThunk('notes/fetch', async ({page = 1, limit = 6, scope = 'all', q = '', from = '', to = ''}={}) => {
+   const response = await fetchNotes({ page, limit, scope, q, from, to })
    return response.data
 })
 
