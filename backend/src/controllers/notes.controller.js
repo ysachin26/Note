@@ -7,7 +7,7 @@ const { Types } = require('mongoose')
  * @typedef {{ title: string, description: string }} CreateNoteBody
  * @typedef {{ title?: string, description?: string, isArchived?: boolean, isImportant?: boolean, isBin?: boolean }} UpdateNoteBody
  * @typedef {{ id: string }} IdParams
- * @typedef {{ page?: string, limit?: string, scope?: string }} NotesQuery
+ * @typedef {{ page?: string, limit?: string, scope?: string ,q?:string, from?:string,to?:string}} NotesQuery
  * @typedef {{ id: string }} AuthUser
  * @typedef {import('express').Request & { user?: AuthUser }} AuthenticatedRequest
  */
@@ -44,6 +44,7 @@ const saveNotes = async (req, res) => {
  * @param {import('express').Response} res
  * @returns {Promise<import('express').Response | void>}
  */
+
 const getNotes = async (req, res) => {
     if (!req.user || !req.user.id) {
         return res.status(401).json({ message: 'login first' })
@@ -52,17 +53,23 @@ const getNotes = async (req, res) => {
     const userId = req.user.id;
     const query = /** @type {NotesQuery} */ (req.query)
     const scope = (query.scope || 'all').toLowerCase();
+
+    const searchText = (query.q || '').trim();
+    const fromDate = (query.from || '').trim();
+    const toDate = (query.to || '').trim();
+
     try {
         let page = parseInt(query.page ?? '1', 10);
         let limit = parseInt(query.limit ?? '6', 10);
 
         if (isNaN(page) || page < 1) page = 1;
         if (isNaN(limit) || limit < 1) limit = 6;
+
         let skip = (page - 1) * limit;
         //base filter
-        /** @type {{ userId: import('mongoose').Types.ObjectId, isArchived?: boolean | { $ne: true }, isImportant?: boolean | { $ne: true }, isBin?: boolean | { $ne: true } }} */
-        const match = { userId: new Types.ObjectId(userId) };
+        /**  @type {{ userId: import('mongoose').Types.ObjectId, isArchived?: boolean | { $ne: true }, isImportant?: boolean | { $ne: true }, isBin?: boolean | { $ne: true }, $text?: { $search: string }, createdAt?: { $gte?: Date, $lte?: Date } }} */
 
+        const match = { userId: new Types.ObjectId(userId) };
         //scope filter
         switch (scope) {
             case 'active':
@@ -73,49 +80,62 @@ const getNotes = async (req, res) => {
 
             case 'archived':
                 match.isArchived = true;
-                break; case 'bin':
+                break;
+
+            case 'bin':
                 match.isBin = true;
-                break; case 'important':
+                break;
+
+            case 'important':
                 match.isImportant = true;
-                break; case 'all':
+                break;
+
+            case 'all':
+
+
             default:
                 // no extra filter
                 break;
         }
 
 
+        if (searchText) {
+            match.$text = { $search: searchText };
+        }
 
-        const allNotes = await noteModel.aggregate([
-            {
-                $match: match
-            },
-            {
-                $facet: {
-                    metadata: [{ $count: "totalNotes" }],
-                    data: [
-                        { $sort: { createdAt: -1 } },
-                        { $skip: skip },
-                        { $limit: limit }
-                    ]
-                }
+        if (fromDate || toDate) {
+            match.createdAt = {};
+            if (fromDate) {
+                //$gte: Stands for "greater than or equal to" (>=)
+                match.createdAt.$gte = new Date(fromDate);
             }
-        ]);
+            if (toDate) {
+                const endDate = new Date(toDate);
+                endDate.setHours(23, 59, 59, 999);
+                match.createdAt.$lte = endDate;
+            }
+        }
+        const totalCount = await noteModel.countDocuments(match);
+        const queryBuilder = noteModel.find(match);
 
-        const metadata = allNotes?.[0]?.metadata?.[0] || { totalNotes: 0 }
-        const data = allNotes?.[0]?.data || []
+        //pagination and sorting
+        const notes = await (searchText
+            ? queryBuilder.sort({ score: { $meta: 'textScore' } })
+            : queryBuilder.sort({ createdAt: -1 }))
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
         return res.status(200).json({
-            message: "notes fetched successfully",
+            message: 'notes fetched successfully',
             page,
             limit,
-            totalCount: metadata.totalNotes,
-            notes: data,
-            result: allNotes
+            totalCount,
+            notes
         });
-
     } catch (error) {
-        console.error("fetch Note:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+        console.error('fetch Note:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 /**

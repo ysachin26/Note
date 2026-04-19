@@ -47,5 +47,8 @@ const noteSchema = new Schema(
     }
 )
 
+//MongoDB requires a text index for $text queries.
+noteSchema.index({title:'text',description:'text'})
+
 const noteModel = model('note', noteSchema)
 module.exports = noteModel;
