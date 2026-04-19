@@ -22,18 +22,30 @@ export const Navbar = () => {
       className="sticky top-0 z-20 w-full border-b border-slate-200 bg-white"
       style={{ fontFamily: "'Space Grotesk', sans-serif" }}
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-white">
-            N
+      <div className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-white">
+              N
+            </div>
+            <div className="leading-tight">
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Notex</p>
+              <p className="text-sm text-slate-600">Notes dashboard</p>
+            </div>
           </div>
-          <div className="leading-tight">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Notex</p>
-            <p className="text-sm text-slate-600">Notes dashboard</p>
-          </div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            aria-label="Logout"
+            className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
         </div>
 
-        <nav className="flex flex-wrap items-center gap-2">
+        <nav className="mt-4 flex w-full flex-wrap items-center gap-2 overflow-x-auto">
           <NavLink
             to="/"
             className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkIdle}`}
@@ -65,19 +77,8 @@ export const Navbar = () => {
             Bin
           </NavLink>
         </nav>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          aria-label="Logout"
-          className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-        >
-          <LogOut size={16} />
-          Logout
-        </button>
       </div>
     </header>
   )
 }
-
 
