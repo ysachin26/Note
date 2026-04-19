@@ -15,13 +15,16 @@ const createNote = async (title, description) => {
     )
 }
 
-const fetchNotes = async (page = 1, limit = 6, scope = 'all') => {
+const fetchNotes = async (page = 1, limit = 6, scope = 'all', q = '', from = '', to = '') => {
     return await axiosInstance.get('/notes', {
         //axios req params key to conver objects to query strings
         params:
         {
             page,
-            limit, scope
+            limit, scope,
+            q,
+            from,
+            to,
         }
     })
 }
@@ -35,12 +38,12 @@ const updateNote = async (id, data) => {
     return await axiosInstance.patch(`/notes/${id}`, data
     )
 }
- /**
- * 
- * @param {string} id 
+/**
+* 
+* @param {string} id 
  
  
- */
+*/
 const deleteNote = async (id) => {
     return await axiosInstance.delete(`/notes/${id}`)
 }
