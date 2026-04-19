@@ -65,7 +65,7 @@ export const Pastes = () => {
 	const refetchPage = (pageNumber) => {
 		dispatch(fetchNotesThunk({ page: pageNumber, limit: 6, scope: "active" }))
 	}
- 
+
 	useEffect(() => {
 		dispatch(fetchNotesThunk({ page: Page, limit: 6, scope: "active" }));
 	}, [Page, dispatch]);
@@ -133,10 +133,10 @@ export const Pastes = () => {
 
 	// delete → move to bin  => new apporach
 	const deleteFromPaste = async (id) => {
-		const res = await dispatch(updateNoteThunk({id,data: { isBin: true }}))
-	 if (updateNoteThunk.fulfilled.match(res)) {
-    refetchPage(Page);
-  }
+		const res = await dispatch(updateNoteThunk({ id, data: { isBin: true } }))
+		if (updateNoteThunk.fulfilled.match(res)) {
+			refetchPage(Page);
+		}
 	}
 
 	// const pinItem = (id) => {
@@ -176,6 +176,10 @@ export const Pastes = () => {
 			refetchPage(Page)
 		}
 	}
+
+	const openFilterBox = () => {
+
+	}
 	return (
 		<div
 			className="min-h-screen bg-slate-200"
@@ -198,15 +202,19 @@ export const Pastes = () => {
 					</div>
 				</div>
 
-				<div className="mt-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+				<div className=" mt-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
 					<label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Search notes</label>
-					<input
-						className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
-						value={searchValue}
-						onChange={handleSearch}
-						placeholder="Search your notes..."
-						type="text"
-					/>
+					<div className='flex  items-center gap-5  justify-center'>
+						<input
+							className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
+							value={searchValue}
+							onChange={handleSearch}
+							placeholder="Search your notes..."
+							type="text"
+						/><label onClick={openFilterBox} className="text-xs cursor-pointer bg-black text-white p-3 rounded font-semibold uppercase tracking-[0.3em] text-slate-500">Filter</label>
+					</div>
+
+
 				</div>
 
 				<div className="mt-8 grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ">
@@ -322,8 +330,8 @@ export const Pastes = () => {
 							key={pageNumber}
 							onClick={() => handlePageClick(pageNumber)}
 							className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${Page === pageNumber
-									? 'border-black bg-black text-white'
-									: 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+								? 'border-black bg-black text-white'
+								: 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
 								}`}
 						>
 							{pageNumber}
@@ -338,8 +346,16 @@ export const Pastes = () => {
 						Next
 					</button>
 				</div>
-				</div>
+			</div>
+			{/*filter box starts */}
+						<div>
+							<div>
+								
+							</div>
+						</div>
+								{/*filter box ends */}
 		</div>
+
 	);
 };
 
