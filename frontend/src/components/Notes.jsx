@@ -1,362 +1,398 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { NavLink } from 'react-router-dom';
-//import { binItems, importantNotes, pinnedCard, archievePaste } from '../redux/features/noteSlice';
 import { FaRegEdit } from 'react-icons/fa';
-import { IoCopyOutline, IoEyeSharp } from "react-icons/io5";
-import { MdDelete } from "react-icons/md";
+import { IoCopyOutline, IoEyeSharp } from 'react-icons/io5';
+import { MdDelete, MdArchive } from 'react-icons/md';
 import toast from 'react-hot-toast';
-import { CiShare1 } from "react-icons/ci";
-import { useMemo, useState } from 'react';
-import { BsPin } from "react-icons/bs";
-import { BsPinFill } from "react-icons/bs";
-import { MdArchive } from "react-icons/md";
-import { CiStar } from "react-icons/ci";
-import { updateNoteThunk } from '../redux/features/noteSlice'
-import { useEffect } from 'react';
-import { fetchNotesThunk } from '../redux/features/noteSlice';
+import { CiShare1, CiStar } from 'react-icons/ci';
+import { useEffect, useMemo, useState } from 'react';
+import { BsPin, BsPinFill } from 'react-icons/bs';
+import { updateNoteThunk, fetchNotesThunk } from '../redux/features/noteSlice';
+
 const copyFromClipboard = async (text) => {
-	// small guard and user feedback
-	if (!navigator?.clipboard) {
-		toast.error('Clipboard not supported');
-		return;
-	}
-	try {
-		await navigator.clipboard.writeText(text);
-		toast.success('Copied');
-	} catch {
-		toast.error('Copy failed');
-	}
+    if (!navigator?.clipboard) {
+        toast.error('Clipboard not supported');
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(text);
+        toast.success('Copied');
+    } catch {
+        toast.error('Copy failed');
+    }
 };
 
-const sharePaste = async (p) => {
-	const Url = `${window.location.origin}/?pasteId=${p._id}`
-	if (navigator.share) {
-		try {
-			await navigator.share(
-				{
-					title: p.title || 'shared paste',
-					text: p.description,
-					url: Url
-				}
-			);
-			toast.success("shared successfully")
-		}
-		catch (error) {
-			if (error.name !== 'AbortError') {
-				await copyFromClipboard(Url);
-				toast.success("link copied to clipboard successfully")
-			}
-
-		}
-	} else {
-		await copyFromClipboard(Url);
-		toast.success('Link copied to clipboard');
-	}
-}
+const sharePaste = async (paste) => {
+    const url = `${window.location.origin}/?pasteId=${paste._id}`;
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: paste.title || 'shared paste',
+                text: paste.description,
+                url,
+            });
+            toast.success('Shared successfully');
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                await copyFromClipboard(url);
+                toast.success('Link copied to clipboard');
+            }
+        }
+    } else {
+        await copyFromClipboard(url);
+        toast.success('Link copied to clipboard');
+    }
+};
 
 export const Pastes = () => {
+    const { notes, totalPages, loading } = useSelector((state) => state.paste);
+    const dispatch = useDispatch();
 
-	const { notes, totalPages, loading } = useSelector((state) => state.paste);
-	const dispatch = useDispatch();
-	const [searchValue, setSearchValue] = useState('');
-	//const [currentPage, setCurrentPage] = useState('');
+    const [searchValue, setSearchValue] = useState('');
+    const [showFilterBox, setShowFilterBox] = useState(false);
+    const [activeFilter, setActiveFilter] = useState('active');
+    const [sortOrder, setSortOrder] = useState('pinned');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+    const [Page, setPage] = useState(1);
 
-	const [Page, setPage] = useState(1);
-	const refetchPage = (pageNumber) => {
-		dispatch(fetchNotesThunk({ page: pageNumber, limit: 6, scope: "active" }))
-	}
+    const filterOptions = [
+        { key: 'active', label: 'All' },
+        { key: 'important', label: 'Important' },
+        { key: 'archived', label: 'Archive' },
+        { key: 'bin', label: 'Bin' },
+    ];
 
-	useEffect(() => {
-		dispatch(fetchNotesThunk({ page: Page, limit: 6, scope: "active" }));
-	}, [Page, dispatch]);
-	const handleNextPage = () => {
-		if (Page < totalPages) setPage(Page + 1);
-	};
+    const refetchPage = (pageNumber) => {
+        dispatch(
+            fetchNotesThunk({
+                page: pageNumber,
+                limit: 6,
+                scope: activeFilter,
+                q: searchValue.trim(),
+                from: dateFrom,
+                to: dateTo,
+            })
+        );
+    };
 
-	const handlePrevPage = () => {
-		if (Page > 1) setPage(Page - 1);
-	};
+    useEffect(() => {
+        setPage(1);
+    }, [activeFilter, searchValue, dateFrom, dateTo]);
 
-	const handlePageClick = (pageNumber) => {
-		setPage(pageNumber);
-	};
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            dispatch(
+                fetchNotesThunk({
+                    page: Page,
+                    limit: 6,
+                    scope: activeFilter,
+                    q: searchValue.trim(),
+                    from: dateFrom,
+                    to: dateTo,
+                })
+            );
+        }, 250);
 
-	const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+        return () => clearTimeout(timer);
+    }, [dispatch, Page, activeFilter, searchValue, dateFrom, dateTo]);
 
+    useEffect(() => {
+        if (totalPages > 0 && Page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [Page, totalPages]);
 
-	useEffect(() => {
-		if (totalPages > 0 && Page > totalPages) {
-			setPage(totalPages);
-		}
-	}, [Page, totalPages]);
+    useEffect(() => {
+        if (!loading && Page > 1 && notes.length === 0) {
+            setPage((prev) => prev - 1);
+        }
+    }, [notes.length, loading, Page]);
 
-	useEffect(() => {
-		if (!loading && Page > 1 && notes.length === 0) {
-			setPage((prev) => prev - 1);
-		}
-	}, [notes.length, loading, Page]);
+    const filteredData = useMemo(() => {
+        const data = [...notes];
+        data.sort((a, b) => {
+            if (sortOrder === 'newest') {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            }
+            if (sortOrder === 'oldest') {
+                return new Date(a.createdAt) - new Date(b.createdAt);
+            }
+            return Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned));
+        });
+        return data;
+    }, [notes, sortOrder]);
 
+    const handleSearch = (e) => {
+        setSearchValue(e.target.value);
+    };
 
-	const filteredData = useMemo(() => {
-		const data = [...notes.filter(n => !n.isArchived && !n.isBin && !n.isImportant)];
+    const deleteFromPaste = async (id) => {
+        const res = await dispatch(updateNoteThunk({ id, data: { isBin: true } }));
+        if (updateNoteThunk.fulfilled.match(res)) {
+            refetchPage(Page);
+        }
+    };
 
-		//filtering my data
-		let searchData = data;
-		if (!searchValue.trim()) {
-			searchData = data;
-		}
-		else {
-			searchData = data.filter(item =>
-				item.title.toLowerCase().includes(searchValue.toLowerCase())
-			);
-		}
+    const pinItem = (id) => {
+        const note = notes.find((n) => n._id === id);
+        if (!note) return;
+        dispatch(updateNoteThunk({ id, data: { isPinned: !note.isPinned } }));
+    };
 
-		//applying sorting on filterd data - this is the standard method becase applying sorting on unfiltered data is not optimised 
-		//it is like performing sorting on 100 elements and rendering only 5 because of filtering
+    const makePasteArchieve = async (id) => {
+        const res = await dispatch(updateNoteThunk({ id, data: { isArchived: true } }));
+        if (updateNoteThunk.fulfilled.match(res)) {
+            refetchPage(Page);
+        }
+    };
 
-		searchData.sort((a, b) => {
-			return b.isPinned - a.isPinned;
-		})
+    const handleimportantNotes = async (id) => {
+        const res = await dispatch(updateNoteThunk({ id, data: { isImportant: true } }));
+        if (updateNoteThunk.fulfilled.match(res)) {
+            refetchPage(Page);
+        }
+    };
 
-		return searchData;
-	}, [searchValue, notes]);
+    const handleNextPage = () => {
+        if (Page < totalPages) setPage(Page + 1);
+    };
 
+    const handlePrevPage = () => {
+        if (Page > 1) setPage(Page - 1);
+    };
 
-	const handleSearch = (e) => {
-		setSearchValue(e.target.value);
-	};
+    const handlePageClick = (pageNumber) => {
+        setPage(pageNumber);
+    };
 
+    const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
-	// const deleteFromPaste = (id) => {
-	// 	dispatch(binItems(id));
-	// };
+    return (
+        <div className="min-h-screen bg-slate-200" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            <div className={`mx-auto w-full px-6 py-10 ${showFilterBox ? 'max-w-[1600px]' : 'max-w-6xl'}`}>
+                <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Library</p>
+                        <h1 className="mt-3 text-3xl font-semibold text-slate-900" style={{ fontFamily: "'Crimson Pro', serif" }}>
+                            All notes
+                        </h1>
+                        <p className="mt-2 text-sm text-slate-600">Search, pin, and archive your saved ideas.</p>
+                    </div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Pinned on top</div>
+                </div>
 
-	// delete → move to bin  => new apporach
-	const deleteFromPaste = async (id) => {
-		const res = await dispatch(updateNoteThunk({ id, data: { isBin: true } }))
-		if (updateNoteThunk.fulfilled.match(res)) {
-			refetchPage(Page);
-		}
-	}
+                <div className={`mt-8 grid items-start gap-8 ${showFilterBox ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : 'grid-cols-1'}`}>
+                    <div className="min-w-0">
+                        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Search notes</label>
+                            <div className="flex items-center justify-center gap-5">
+                                <input
+                                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
+                                    value={searchValue}
+                                    onChange={handleSearch}
+                                    placeholder="Search your notes..."
+                                    type="text"
+                                />
+                                <button
+                                    onClick={() => setShowFilterBox((prev) => !prev)}
+                                    className="mt-2 rounded bg-black p-3 text-xs font-semibold uppercase tracking-[0.3em] text-white"
+                                >
+                                    {showFilterBox ? 'Hide Filters' : 'Filter'}
+                                </button>
+                            </div>
+                        </div>
 
-	// const pinItem = (id) => {
+                        <div className="mt-8 grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                            {filteredData.length > 0 ? (
+                                filteredData.map((p) => (
+                                    <div key={p._id} className="flex justify-center">
+                                        <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                                            <div className="flex items-center justify-between gap-5 border-b border-slate-200 px-4 py-3">
+                                                <h3 className="truncate text-lg font-medium">{p.title || 'Untitled'}</h3>
+                                                <div className="flex items-center gap-2">
+                                                    <NavLink to={`/?pasteId=${p._id}`} aria-label="Edit paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+                                                        <FaRegEdit />
+                                                    </NavLink>
+                                                    <NavLink to={`/notes/${p._id}`} aria-label="View paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+                                                        <IoEyeSharp />
+                                                    </NavLink>
+                                                    <button onClick={() => copyFromClipboard(p.description)} aria-label="Copy paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+                                                        <IoCopyOutline />
+                                                    </button>
+                                                    <button onClick={() => sharePaste(p)} aria-label="Share" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+                                                        <CiShare1 />
+                                                    </button>
+                                                    {p.isPinned ? (
+                                                        <button onClick={() => pinItem(p._id)} aria-label="Pin" className="rounded-md p-2 text-amber-600 transition hover:bg-amber-50">
+                                                            <BsPinFill />
+                                                        </button>
+                                                    ) : (
+                                                        <button onClick={() => pinItem(p._id)} aria-label="Pin" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+                                                            <BsPin />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
 
-	// 	dispatch(pinnedCard(id))
-	// }
+                                            <div className="px-4 py-4">
+                                                <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">{p.description}</pre>
+                                            </div>
 
+                                            <div className="flex justify-between gap-2 border-t border-slate-200 px-4 py-3">
+                                                <div className="flex gap-2 px-4 py-2">
+                                                    <span className="material-symbols-outlined">calendar_clock</span>
+                                                    <span>
+                                                        <small className="text-xs text-gray-500">
+                                                            {new Date(p.createdAt).toLocaleDateString('en-GB', {
+                                                                day: 'numeric',
+                                                                month: 'long',
+                                                                year: 'numeric',
+                                                            })}
+                                                        </small>
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-evenly gap-2 px-4 py-2">
+                                                    <button onClick={() => makePasteArchieve(p._id)} className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+                                                        <MdArchive />
+                                                    </button>
+                                                    <button onClick={() => handleimportantNotes(p._id)} aria-label="Important" className="rounded-md p-2 text-amber-600 transition hover:bg-amber-50 hover:text-amber-800">
+                                                        <CiStar />
+                                                    </button>
+                                                    <button onClick={() => deleteFromPaste(p._id)} aria-label="Delete" className="rounded-md p-2 text-rose-600 transition hover:bg-rose-50 hover:text-rose-800">
+                                                        <MdDelete />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-600">No notes available</p>
+                            )}
+                        </div>
 
-	// pin → toggle => new apporach
-	const pinItem = (id) => {
-		const note = notes.find(n => n._id === id)
-		dispatch(updateNoteThunk({ id, data: { isPinned: !note.isPinned } }))
-	}
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                            <button
+                                onClick={handlePrevPage}
+                                disabled={Page === 1}
+                                className="rounded-md border border-slate-300 bg-black px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Prev
+                            </button>
 
+                            {pageNumbers.map((pageNumber) => (
+                                <button
+                                    key={pageNumber}
+                                    onClick={() => handlePageClick(pageNumber)}
+                                    className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${Page === pageNumber ? 'border-black bg-black text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}
+                                >
+                                    {pageNumber}
+                                </button>
+                            ))}
 
-	// const makePasteArchieve = (id) => {
-	// 	dispatch(archievePaste(id));
-	// }
+                            <button
+                                onClick={handleNextPage}
+                                disabled={Page === totalPages || totalPages === 0}
+                                className="rounded-md border border-slate-300 bg-black px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
 
-	// archive => new apporach
+                    {showFilterBox && (
+                        <aside className="w-full self-start rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-24 lg:max-w-none">
+                            <div className="border-b border-slate-200 pb-3">
+                                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Filter sidebar</p>
+                                <h2 className="mt-1 text-lg font-semibold text-slate-900" style={{ fontFamily: "'Crimson Pro', serif" }}>Refine notes</h2>
+                            </div>
 
-	const makePasteArchieve = async (id) => {
-		const res = await dispatch(updateNoteThunk({ id, data: { isArchived: true } }))
-		if (updateNoteThunk.fulfilled.match(res)) {
-			refetchPage(Page)
-		}
-	}
+                            <div className="mt-4 border-b border-slate-200 pb-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Filters</p>
+                                <div className="mt-2 grid grid-cols-2 gap-2">
+                                    {filterOptions.map((option) => (
+                                        <button
+                                            key={option.key}
+                                            onClick={() => setActiveFilter(option.key)}
+                                            className={`flex w-full items-center justify-center rounded-lg border px-3 py-2 text-center text-sm font-medium transition ${activeFilter === option.key ? 'border-slate-900 bg-slate-900 text-white shadow-sm' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'}`}
+                                        >
+                                            <span className="truncate">{option.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
-	// const handleimportantNotes = (id) => {
-	// 	dispatch(importantNotes(id));
-	// };
+                            <div className="mt-4 border-b border-slate-200 pb-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Sort</p>
+                                <div className="mt-2 grid grid-cols-3 gap-2">
+                                    {[
+                                        { key: 'pinned', label: 'Pinned' },
+                                        { key: 'newest', label: 'New' },
+                                        { key: 'oldest', label: 'Old' },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.key}
+                                            onClick={() => setSortOrder(item.key)}
+                                            className={`flex w-full items-center justify-center rounded-lg border px-3 py-2 text-center text-sm font-medium transition ${sortOrder === item.key ? 'border-slate-900 bg-slate-900 text-white shadow-sm' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'}`}
+                                        >
+                                            <span>{item.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
-	// important => new apporach
-	const handleimportantNotes = async (id) => {
-		const res = await dispatch(updateNoteThunk({ id, data: { isImportant: true } }))
-		if (updateNoteThunk.fulfilled.match(res)) {
-			refetchPage(Page)
-		}
-	}
+                            <div className="mt-4 border-b border-slate-200 pb-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Date</p>
+                                <div className="mt-2 grid grid-cols-1 gap-2">
+                                    <label className="text-xs font-medium text-slate-600">
+                                        From
+                                        <input
+                                            type="date"
+                                            value={dateFrom}
+                                            onChange={(e) => setDateFrom(e.target.value)}
+                                            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
+                                        />
+                                    </label>
+                                    <label className="text-xs font-medium text-slate-600">
+                                        To
+                                        <input
+                                            type="date"
+                                            value={dateTo}
+                                            onChange={(e) => setDateTo(e.target.value)}
+                                            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
 
-	const openFilterBox = () => {
-
-	}
-	return (
-		<div
-			className="min-h-screen bg-slate-200"
-			style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-		>
-			<div className="mx-auto w-full max-w-6xl px-6 py-10">
-				<div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-					<div>
-						<p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Library</p>
-						<h1
-							className="mt-3 text-3xl font-semibold text-slate-900"
-							style={{ fontFamily: "'Crimson Pro', serif" }}
-						>
-							All notes
-						</h1>
-						<p className="mt-2 text-sm text-slate-600">Search, pin, and archive your saved ideas.</p>
-					</div>
-					<div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-						Pinned on top
-					</div>
-				</div>
-
-				<div className=" mt-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-					<label className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Search notes</label>
-					<div className='flex  items-center gap-5  justify-center'>
-						<input
-							className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
-							value={searchValue}
-							onChange={handleSearch}
-							placeholder="Search your notes..."
-							type="text"
-						/><label onClick={openFilterBox} className="text-xs cursor-pointer bg-black text-white p-3 rounded font-semibold uppercase tracking-[0.3em] text-slate-500">Filter</label>
-					</div>
-
-
-				</div>
-
-				<div className="mt-8 grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ">
-					{filteredData.length > 0 ? (
-						filteredData.map((p) => (
-							<div key={p._id} className="flex justify-center">
-								<div className="w-full max-w-xl rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
-
-									<div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 gap-5">
-										<h3 className="text-lg font-medium truncate">{p.title || 'Untitled'}</h3>
-										<div className="flex items-center gap-2">
-											<NavLink to={`/?pasteId=${p._id}`} aria-label="Edit paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
-												<FaRegEdit />
-											</NavLink>
-											<NavLink to={`/notes/${p._id}`} aria-label="View paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
-												<IoEyeSharp />
-											</NavLink>
-											<button onClick={() => copyFromClipboard(p.description)} aria-label="Copy paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
-												<IoCopyOutline />
-											</button>
-
-											<button
-												onClick={() => sharePaste(p)}
-												aria-label="Share"
-												className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-											>
-												<CiShare1 />
-											</button>
-
-											{
-												p.isPinned ? (
-													<button
-														onClick={() => pinItem(p._id)}
-														aria-label="Copy paste"
-														className="rounded-md p-2 text-amber-600 transition hover:bg-amber-50"
-													>
-														<BsPinFill />
-													</button>
-												) : (
-													<button
-														onClick={() => pinItem(p._id)}
-														aria-label="Copy paste"
-														className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-													>
-														<BsPin />
-													</button>
-												)
-											}
-										</div>
-									</div>
-
-									<div className="px-4 py-4">
-										<pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words text-sm">{p.description}</pre>
-									</div>
-
-									<div className="px-4 py-3 border-t border-slate-200 flex gap-2 justify-between ">
-										<div className="px-4 py-2  flex gap-2  ">
-											<span className="material-symbols-outlined">
-												calendar_clock
-											</span>
-											<span>
-												<small className="text-xs text-gray-500">	{new Date(p.createdAt).toLocaleDateString('en-GB', {
-													day: 'numeric', month: 'long', year: 'numeric'
-												})
-												}</small>
-											</span>
-										</div>
-										<div className="px-4 py-2  flex gap-2  justify-evenly">
-
-											<button
-												onClick={() => makePasteArchieve(p._id)}
-												className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-											>
-												<MdArchive />
-											</button>
-											<button
-												onClick={() => handleimportantNotes(p._id)}
-												aria-label="Delete paste"
-												className="rounded-md p-2 text-amber-600 transition hover:bg-amber-50 hover:text-amber-800"
-											>
-												<CiStar />
-											</button>
-											<button
-												onClick={() => deleteFromPaste(p._id)}
-												aria-label="Delete paste"
-												className="rounded-md p-2 text-rose-600 transition hover:bg-rose-50 hover:text-rose-800"
-											>
-												<MdDelete />
-											</button>
-
-										</div>
-
-									</div>
-								</div>
-
-							</div>
-						))
-					) : (
-						<p className="text-center text-gray-600">No notes available</p>
-					)}
-				</div>
-				<div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-					<button
-						onClick={handlePrevPage}
-						disabled={Page === 1}
-						className="rounded-md border border-slate-300 bg-black px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						Prev
-					</button>
-
-					{pageNumbers.map((pageNumber) => (
-						<button
-							key={pageNumber}
-							onClick={() => handlePageClick(pageNumber)}
-							className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${Page === pageNumber
-								? 'border-black bg-black text-white'
-								: 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-								}`}
-						>
-							{pageNumber}
-						</button>
-					))}
-
-					<button
-						onClick={handleNextPage}
-						disabled={Page === totalPages || totalPages === 0}
-						className="rounded-md border border-slate-300 bg-black px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-					>
-						Next
-					</button>
-				</div>
-			</div>
-			{/*filter box starts */}
-						<div>
-							<div>
-								
-							</div>
-						</div>
-								{/*filter box ends */}
-		</div>
-
-	);
+                            <div className="mt-4 flex items-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        setActiveFilter('active');
+                                        setSortOrder('pinned');
+                                        setSearchValue('');
+                                        setDateFrom('');
+                                        setDateTo('');
+                                        setShowFilterBox(false);
+                                    }}
+                                    className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={() => setShowFilterBox(false)}
+                                    className="flex-1 rounded-xl bg-black px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        </aside>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default Pastes;

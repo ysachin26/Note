@@ -15,7 +15,7 @@ const createNote = async (title, description) => {
     )
 }
 
-const fetchNotes = async (page = 1, limit = 6, scope = 'all', q = '', from = '', to = '') => {
+const fetchNotes = async ({ page = 1, limit = 6, scope = 'all', q = '', from = '', to = '' } = {}) => {
     return await axiosInstance.get('/notes', {
         //axios req params key to conver objects to query strings
         params:
