@@ -1,16 +1,18 @@
 import { useDispatch, useSelector } from 'react-redux';
 //import { deleteItem } from '../redux/features/noteSlice';
 import { MdDelete } from 'react-icons/md';
+import { MdRestore } from 'react-icons/md';
 import { IoCopyOutline } from 'react-icons/io5';
 import toast from 'react-hot-toast';
 import { useEffect } from 'react';
-import { deleteNoteThunk, fetchNotesThunk } from '../redux/features/noteSlice'
+import { deleteNoteThunk, fetchNotesThunk, updateNoteThunk } from '../redux/features/noteSlice'
 
 export const Bin = () => {
   const dispatch = useDispatch();
   // const { bin } = useSelector((state) => state.paste);
-  const { notes } = useSelector((state) => state.paste)
-  const bin = notes.filter(n => n.isBin)
+  const { notes, loading } = useSelector((state) => state.paste)
+  // Keep bin view stable even if shared store briefly contains notes from another scope.
+  const bin = notes.filter((n) => n.isBin);
 
   useEffect(() => {
     dispatch(fetchNotesThunk({ page: 1, limit: 50, scope: 'bin' }));
@@ -42,6 +44,14 @@ export const Bin = () => {
     }
   }
 
+  const handleRestore = async (id) => {
+    const res = await dispatch(updateNoteThunk({ id, data: { isBin: false }, skipToast: true }));
+    if (updateNoteThunk.fulfilled.match(res)) {
+      toast.success('Restored from bin');
+      dispatch(fetchNotesThunk({ page: 1, limit: 50, scope: 'bin' }));
+    }
+  }
+
   return (
     <div
       className="min-h-screen bg-slate-200"
@@ -68,7 +78,9 @@ export const Bin = () => {
           Items in the bin are deleted automatically after 30 days.
         </div>
 
-        {bin.length > 0 ? (
+        {loading && bin.length === 0 ? (
+          <p className="mt-10 text-center text-gray-600">Loading bin...</p>
+        ) : bin.length > 0 ? (
           <div className="mt-6 grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {bin.map((p) => (
               <div key={p._id} className="rounded-lg border border-slate-200 bg-white shadow-sm flex flex-col">
@@ -102,6 +114,13 @@ export const Bin = () => {
                   </div>
 
                   <div className="flex gap-3">
+                    <button
+                      onClick={() => handleRestore(p._id)}
+                      aria-label="Restore note"
+                      className="rounded-md p-2 text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-800"
+                    >
+                      <MdRestore />
+                    </button>
                     <button
                       onClick={() => handleBinDelete(p._id)}
                       aria-label="Delete paste"

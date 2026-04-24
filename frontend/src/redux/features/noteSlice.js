@@ -263,7 +263,9 @@ const pasteSlice = createSlice({
          .addCase(updateNoteThunk.fulfilled, (state, action) => {
             const index = state.notes.findIndex((n) => n._id === action.payload._id)
             if (index !== -1) state.notes[index] = action.payload
-            toast.success('Note updated')
+            if (!action.meta.arg?.skipToast) {
+               toast.success('Note updated')
+            }
          })
          .addCase(deleteNoteThunk.fulfilled, (state, action) => {
             state.notes = state.notes.filter((n) => n._id !== action.payload)
