@@ -28,6 +28,11 @@ const noteSchema = new Schema(
             type:Boolean,
             default:false,
         },
+        // Set when a note moves to bin. TTL index uses this for auto-deletion.
+        binAt: {
+            type: Date,
+            default: null,
+        },
         title:
         {
             type:String,
@@ -49,6 +54,15 @@ const noteSchema = new Schema(
 
 //MongoDB requires a text index for $text queries.
 noteSchema.index({title:'text',description:'text'})
+
+// Auto-delete notes 30 days after they are moved to bin.
+noteSchema.index(
+    { binAt: 1 },
+    {
+        expireAfterSeconds: 60 * 60 * 24 * 30,
+        partialFilterExpression: { isBin: true }
+    }
+)
 
 const noteModel = model('note', noteSchema)
 module.exports = noteModel;

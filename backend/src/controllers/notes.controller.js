@@ -5,7 +5,7 @@ const { Types } = require('mongoose')
 
 /**
  * @typedef {{ title: string, description: string }} CreateNoteBody
- * @typedef {{ title?: string, description?: string, isArchived?: boolean, isImportant?: boolean, isBin?: boolean }} UpdateNoteBody
+ * @typedef {{ title?: string, description?: string, isArchived?: boolean, isImportant?: boolean, isBin?: boolean, binAt?: Date | null }} UpdateNoteBody
  * @typedef {{ id: string }} IdParams
  * @typedef {{ page?: string, limit?: string, scope?: string ,q?:string, from?:string,to?:string}} NotesQuery
  * @typedef {{ id: string }} AuthUser
@@ -151,7 +151,17 @@ const updateNote = async (req, res) => {
         }
 
         const { id } = /** @type {IdParams} */ (req.params);
-        const payload = /** @type {UpdateNoteBody} */ (req.body)
+        const payload = { .../** @type {UpdateNoteBody} */ (req.body) }
+
+        // Maintain binAt for TTL auto-deletion logic.
+        if (Object.prototype.hasOwnProperty.call(payload, 'isBin')) {
+            if (payload.isBin) {
+                payload.binAt = new Date();
+            } else {
+                payload.binAt = null;
+            }
+        }
+
         const updatedNote = await noteModel.findOneAndUpdate({ _id: id, userId: req.user.id }, payload,
             { new: true })
         return res.status(200).json({
