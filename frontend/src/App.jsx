@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import Archieve from './components/Archieve';
 import Important from './components/Important';
 import Bin from './components/Bin';
+import SharedNote from './components/SharedNote';
 
 import { useDispatch, useSelector } from 'react-redux'
 import { Navigate } from 'react-router-dom'
@@ -100,6 +101,12 @@ const router = createBrowserRouter([
     path: "/forgot-password",
     element: <div>
       <ForgotPasswordForm />
+    </div>,
+  },
+  {
+    path: "/share/:token",
+    element: <div>
+      <SharedNote />
     </div>,
   },
 

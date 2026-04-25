@@ -3,6 +3,7 @@ dotenv.config()
 const express = require('express')
 const authRoutes = require('./src/routes/auth.routes')
 const noteRoutes = require('./src/routes/notes.routes')
+const shareRoutes = require('./src/routes/share.routes')
 const connectDB = require('./src/config/db')
 const { dnsFallBackMechanism } = require('./src/config/dns')
 const dns = require('dns');
@@ -20,3 +21,4 @@ app.listen(PORT, () => {
 
 app.use('/api/auth/', authRoutes);
 app.use('/api/notes', noteRoutes)
+app.use('/api/share', shareRoutes)
