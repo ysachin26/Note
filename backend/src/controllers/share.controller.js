@@ -8,14 +8,18 @@ const { Types } = require('mongoose')
 
 /**
  * @typedef {{ noteId: string, visibility?: 'unlisted' | 'public' | 'password', password?: string, expiresAt?: string | null }} CreateShareBody
+ * @typedef {{ visibility?: 'unlisted' | 'public' | 'password', password?: string, clearPassword?: boolean, expiresAt?: string | null }} UpdateShareBody
+ * @typedef {{ tokens?: string[] }} BulkRevokeBody
  * @typedef {{ password?: string }} SharedNoteQuery
  * @typedef {{ token: string }} ShareParams
  * @typedef {{ noteId: string }} ShareNoteParams
  * @typedef {{ noteId?: string, includeRevoked?: string }} ShareListQuery
- * @typedef {{ token: string, noteId: import('mongoose').Types.ObjectId | string, visibility: 'unlisted' | 'public' | 'password', expiresAt?: Date | null, revokedAt?: Date | null, createdAt?: Date, lastViewedAt?: Date | null }} ShareLike
+ * @typedef {{ token: string, noteId: import('mongoose').Types.ObjectId | string, visibility: 'unlisted' | 'public' | 'password', expiresAt?: Date | null, revokedAt?: Date | null, createdAt?: Date, lastViewedAt?: Date | null, viewCount?: number }} ShareLike
  * @typedef {import('express').Request & { user?: { id: string } }} AuthenticatedRequest
  * @typedef {import('express').Response} Response
  */
+
+const validVisibilities = ['unlisted', 'public', 'password']
 
 /** @param {string} token */
 const buildShareUrl = (token) => `${process.env.PUBLIC_APP_URL || 'http://localhost:5173'}/share/${token}`
@@ -29,8 +33,27 @@ const toShareSummary = (share) => ({
     revokedAt: share.revokedAt || null,
     createdAt: share.createdAt,
     lastViewedAt: share.lastViewedAt || null,
+    viewCount: share.viewCount || 0,
     url: buildShareUrl(share.token),
 })
+
+/** @param {string | null | undefined} value */
+const parseExpiresAt = (value) => {
+    if (value === undefined) {
+        return { hasValue: false, date: null }
+    }
+
+    if (value === null || value === '') {
+        return { hasValue: true, date: null }
+    }
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+        return { error: 'invalid expiry date format' }
+    }
+
+    return { hasValue: true, date: parsed }
+}
 
 /**
  * @param {AuthenticatedRequest} req
@@ -217,7 +240,7 @@ const getSharedNote = async (req, res) => {
             visibility: share.visibility,
         }
 
-        await shareModel.updateOne({ token }, { $set: { lastViewedAt: new Date() } })
+        await shareModel.updateOne({ token }, { $set: { lastViewedAt: new Date() }, $inc: { viewCount: 1 } })
 
         return res.status(200).json({
             message: 'shared note fetched',
@@ -230,6 +253,111 @@ const getSharedNote = async (req, res) => {
         })
     } catch (error) {
         console.error('getSharedNote error:', error)
+        return res.status(500).json({ message: 'Internal Server Error' })
+    }
+}
+
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {Response} res
+ */
+const updateShare = async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: 'login first' })
+        }
+
+        const { token } = /** @type {ShareParams} */ (req.params)
+        const body = /** @type {UpdateShareBody} */ (req.body)
+
+        const share = await shareModel.findOne({ token, ownerId: req.user.id })
+        if (!share) {
+            return res.status(404).json({ message: 'share link not found' })
+        }
+
+        if (share.revokedAt) {
+            return res.status(400).json({ message: 'revoked links cannot be edited' })
+        }
+
+        const nextVisibility = body.visibility || share.visibility
+        if (!validVisibilities.includes(nextVisibility)) {
+            return res.status(400).json({ message: 'invalid visibility' })
+        }
+
+        const parsedExpiry = parseExpiresAt(body.expiresAt)
+        if (parsedExpiry.error) {
+            return res.status(400).json({ message: parsedExpiry.error })
+        }
+
+        share.visibility = nextVisibility
+
+        if (parsedExpiry.hasValue) {
+            share.expiresAt = parsedExpiry.date
+        }
+
+        if (nextVisibility !== 'password') {
+            share.passwordHash = null
+        } else {
+            if (body.clearPassword) {
+                share.passwordHash = null
+            }
+
+            if (body.password) {
+                share.passwordHash = await bcrypt.hash(body.password, 10)
+            }
+
+            if (!share.passwordHash) {
+                return res.status(400).json({ message: 'password is required for password-protected shares' })
+            }
+        }
+
+        await share.save()
+
+        return res.status(200).json({
+            message: 'share link updated',
+            share: toShareSummary(share),
+        })
+    } catch (error) {
+        console.error('updateShare error:', error)
+        return res.status(500).json({ message: 'Internal Server Error' })
+    }
+}
+
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {Response} res
+ */
+const bulkRevokeShares = async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: 'login first' })
+        }
+
+        const body = /** @type {BulkRevokeBody} */ (req.body)
+        const tokens = Array.isArray(body.tokens) ? body.tokens.filter((token) => typeof token === 'string' && token.trim()) : []
+
+        if (tokens.length === 0) {
+            return res.status(400).json({ message: 'at least one token is required' })
+        }
+
+        const now = new Date()
+        const result = await shareModel.updateMany(
+            {
+                ownerId: req.user.id,
+                token: { $in: tokens },
+                revokedAt: null,
+            },
+            { $set: { revokedAt: now } }
+        )
+
+        return res.status(200).json({
+            message: 'share links revoked',
+            matched: result.matchedCount || 0,
+            modified: result.modifiedCount || 0,
+            revokedAt: now,
+        })
+    } catch (error) {
+        console.error('bulkRevokeShares error:', error)
         return res.status(500).json({ message: 'Internal Server Error' })
     }
 }
@@ -266,9 +394,11 @@ const revokeShare = async (req, res) => {
 }
 
 module.exports = {
+    bulkRevokeShares,
     createShare,
     getLatestShareForNote,
     getSharedNote,
     listShares,
     revokeShare,
+    updateShare,
 }

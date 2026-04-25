@@ -42,6 +42,10 @@ const shareSchema = new Schema(
             type: Date,
             default: null,
         },
+        viewCount: {
+            type: Number,
+            default: 0,
+        },
     },
     {
         timestamps: true,
