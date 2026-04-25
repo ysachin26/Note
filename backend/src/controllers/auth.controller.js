@@ -7,6 +7,7 @@ const sendOTP = require('../service/sendOTP.js')
 const generateOTP = require('../utility/generateOTP.js')
 const hashingOTP = require('../utility/hashingOTP.js')
 const dotenv = require('dotenv')
+const { query } = require('express-validator');
 dotenv.config()
 
 /**
@@ -24,11 +25,9 @@ dotenv.config()
 async function registerUser(req, res) {
 
     try {
-
-
-
         const { name, email, password } = req.body;
 
+        
         const isUserAlreadyExist = await UserModel.findOne(
             {
                 email
