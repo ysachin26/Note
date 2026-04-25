@@ -41,12 +41,17 @@ const validateRequest = (req, res, next) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
         return res.status(400).json({
-            message: 'validation failed',
-            errors: errors.array().map((err) => ({
-                field: err.path,
-                message: err.msg,
-            })),
-        })
+            message: [
+      "Must be at least 8 characters long.",
+      "Must contain at least one uppercase letter.",
+      "Must contain at least one number."
+    ],
+  "success": false,
+  "type": "ValidationError",
+  "errors": {
+   
+  }
+} )
     }
     next()
 }

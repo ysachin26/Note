@@ -1,10 +1,10 @@
-// @ts-check
+
 
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { loginThunk, registerThunk, clearError } from '../../redux/features/authSlice'
 import { useState } from 'react'
-
+import toast from 'react-hot-toast'
 
 export const LoginSignup = () => {
     const [isLogin, setIsLogin] = useState('Login')
@@ -33,37 +33,44 @@ export const LoginSignup = () => {
     /**
      * @param {import('react').SubmitEvent<HTMLFormElement>} e
      */
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         dispatch(clearError())
-        if (isLogin === 'Login') {
-            const loginAction =
-                /** @type {(arg: { email: string, password: string }) => any} */
-                (/** @type {unknown} */ (loginThunk))
-            const result = /** @type {{ meta: { requestStatus?: string } }} */ (
-                await dispatch(loginAction({ email, password }))
-            )
-            if (result.meta.requestStatus ===
-                'fulfilled'
-            ) {
-                navigate('/')
+        try {
+            if (isLogin === 'Login') {
+                const loginAction =
+                    /** @type {(arg: { email: string, password: string }) => any} */
+                    (/** @type {unknown} */ (loginThunk))
+                const result = /** @type {{ meta: { requestStatus?: string } }} */ (
+                    await dispatch(loginAction({ email, password }))
+                )
+                if (result.meta.requestStatus ===
+                    'fulfilled'
+                ) {
+                    navigate('/')
+                }
             }
-        }
-        else {
-            const registerAction =
+            else {
+                const registerAction =
 
-                /** @type {(arg: { name: string, email: string, password: string }) => any} */
+                    /** @type {(arg: { name: string, email: string, password: string }) => any} */
 
-                (/** @type {unknown} */ (registerThunk))
-                
-            const result = /** @type {{ meta: { requestStatus?: string } }} */ (
-                await dispatch(registerAction({ name, email, password }))
-            )
-            if (result.meta.requestStatus === 'fulfilled') {
-                localStorage.setItem('pendingOtpEmail', email)
-                navigate('/verify', { state: { email, purpose: 'register' } })
+                    (/** @type {unknown} */ (registerThunk))
+
+                const result = /** @type {{ meta: { requestStatus?: string } }} */ (
+                    await dispatch(registerAction({ name, email, password }))
+                )
+                if (result.meta.requestStatus === 'fulfilled') {
+                    localStorage.setItem('pendingOtpEmail', email)
+                    navigate('/verify', { state: { email, purpose: 'register' } })
+                }
             }
+        } catch (error) {
+
+            toast.error(error)
         }
+
     }
     return (
         <div
@@ -171,7 +178,9 @@ export const LoginSignup = () => {
 
                         {error && (
                             <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                                {error}
+                                {(Array.isArray(error) ? error : [error]).map((msg, index) => (
+                                    <p key={index}>{msg}</p>
+                                ))}
                             </p>
                         )}
 
