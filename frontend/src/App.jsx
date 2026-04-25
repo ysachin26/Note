@@ -10,6 +10,7 @@ import Archieve from './components/Archieve';
 import Important from './components/Important';
 import Bin from './components/Bin';
 import SharedNote from './components/SharedNote';
+import Shares from './components/Shares';
 
 import { useDispatch, useSelector } from 'react-redux'
 import { Navigate } from 'react-router-dom'
@@ -18,8 +19,8 @@ import { fetchMeThunk } from './redux/features/authSlice'
 import { fetchNotesThunk } from './redux/features/noteSlice'
 import OtpVerification from "./components/auth/OtpVerification";
 import { LoginSignup } from './components/auth/LoginSignup';
-import {ResetPasswordForm} from './components/auth/ResetPasswordForm'
-import {ForgotPasswordForm} from './components/auth/ForgotPasswordForm'
+import { ResetPasswordForm } from './components/auth/ResetPasswordForm'
+import { ForgotPasswordForm } from './components/auth/ForgotPasswordForm'
 
 const ProtectedRoute = ({ children }) => {
   const { user, initialized } = useSelector((state) => state.auth)
@@ -76,6 +77,13 @@ const router = createBrowserRouter([
     element: <ProtectedRoute><div>
       <Navbar />
       <ViewPastes />
+    </div></ProtectedRoute>,
+  },
+  {
+    path: "/shares",
+    element: <ProtectedRoute><div>
+      <Navbar />
+      <Shares />
     </div></ProtectedRoute>,
   },
   {

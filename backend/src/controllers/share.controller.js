@@ -10,9 +10,27 @@ const { Types } = require('mongoose')
  * @typedef {{ noteId: string, visibility?: 'unlisted' | 'public' | 'password', password?: string, expiresAt?: string | null }} CreateShareBody
  * @typedef {{ password?: string }} SharedNoteQuery
  * @typedef {{ token: string }} ShareParams
+ * @typedef {{ noteId: string }} ShareNoteParams
+ * @typedef {{ noteId?: string, includeRevoked?: string }} ShareListQuery
+ * @typedef {{ token: string, noteId: import('mongoose').Types.ObjectId | string, visibility: 'unlisted' | 'public' | 'password', expiresAt?: Date | null, revokedAt?: Date | null, createdAt?: Date, lastViewedAt?: Date | null }} ShareLike
  * @typedef {import('express').Request & { user?: { id: string } }} AuthenticatedRequest
  * @typedef {import('express').Response} Response
  */
+
+/** @param {string} token */
+const buildShareUrl = (token) => `${process.env.PUBLIC_APP_URL || 'http://localhost:5173'}/share/${token}`
+
+/** @param {ShareLike} share */
+const toShareSummary = (share) => ({
+    token: share.token,
+    noteId: share.noteId,
+    visibility: share.visibility,
+    expiresAt: share.expiresAt || null,
+    revokedAt: share.revokedAt || null,
+    createdAt: share.createdAt,
+    lastViewedAt: share.lastViewedAt || null,
+    url: buildShareUrl(share.token),
+})
 
 /**
  * @param {AuthenticatedRequest} req
@@ -54,13 +72,96 @@ const createShare = async (req, res) => {
             message: 'share link created',
             share: {
                 token: share.token,
+                noteId: share.noteId,
                 visibility: share.visibility,
                 expiresAt: share.expiresAt,
-                url: `${process.env.PUBLIC_APP_URL || 'http://localhost:5173'}/share/${share.token}`,
+                url: buildShareUrl(share.token),
             },
         })
     } catch (error) {
         console.error('createShare error:', error)
+        return res.status(500).json({ message: 'Internal Server Error' })
+    }
+}
+
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {Response} res
+ */
+const listShares = async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: 'login first' })
+        }
+
+        const query = /** @type {ShareListQuery} */ (req.query)
+        const includeRevoked = String(query.includeRevoked || 'false').toLowerCase() === 'true'
+
+        /** @type {{ ownerId: import('mongoose').Types.ObjectId, noteId?: import('mongoose').Types.ObjectId, revokedAt?: null }} */
+        const match = {
+            ownerId: new Types.ObjectId(req.user.id),
+        }
+
+        if (query.noteId) {
+            if (!Types.ObjectId.isValid(query.noteId)) {
+                return res.status(400).json({ message: 'invalid note id' })
+            }
+            match.noteId = new Types.ObjectId(query.noteId)
+        }
+
+        if (!includeRevoked) {
+            match.revokedAt = null
+        }
+
+        const shares = await shareModel.find(match).sort({ createdAt: -1 }).lean()
+
+        return res.status(200).json({
+            message: 'share links fetched',
+            shares: shares.map(toShareSummary),
+        })
+    } catch (error) {
+        console.error('listShares error:', error)
+        return res.status(500).json({ message: 'Internal Server Error' })
+    }
+}
+
+/**
+ * @param {AuthenticatedRequest} req
+ * @param {Response} res
+ */
+const getLatestShareForNote = async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: 'login first' })
+        }
+
+        const { noteId } = /** @type {ShareNoteParams} */ (req.params)
+        if (!Types.ObjectId.isValid(noteId)) {
+            return res.status(400).json({ message: 'invalid note id' })
+        }
+
+        const ownedNote = await noteModel.findOne({ _id: noteId, userId: req.user.id }).select('_id').lean()
+        if (!ownedNote) {
+            return res.status(404).json({ message: 'note not found' })
+        }
+
+        const now = new Date()
+        const share = await shareModel
+            .findOne({
+                ownerId: req.user.id,
+                noteId,
+                revokedAt: null,
+                $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
+            })
+            .sort({ createdAt: -1 })
+            .lean()
+
+        return res.status(200).json({
+            message: 'latest share fetched',
+            share: share ? toShareSummary(share) : null,
+        })
+    } catch (error) {
+        console.error('getLatestShareForNote error:', error)
         return res.status(500).json({ message: 'Internal Server Error' })
     }
 }
@@ -166,6 +267,8 @@ const revokeShare = async (req, res) => {
 
 module.exports = {
     createShare,
+    getLatestShareForNote,
     getSharedNote,
+    listShares,
     revokeShare,
 }

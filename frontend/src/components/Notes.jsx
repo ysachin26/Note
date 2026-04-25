@@ -8,7 +8,7 @@ import { CiShare1, CiStar } from 'react-icons/ci';
 import { useEffect, useMemo, useState } from 'react';
 import { BsPin, BsPinFill } from 'react-icons/bs';
 import { updateNoteThunk, fetchNotesThunk } from '../redux/features/noteSlice';
-import { createShare, revokeShare } from '../api/shareApi';
+import { createShare, getLatestShareForNote, revokeShare } from '../api/shareApi';
 
 const copyFromClipboard = async (text) => {
     if (!navigator?.clipboard) {
@@ -22,6 +22,25 @@ const copyFromClipboard = async (text) => {
     } catch {
         toast.error('Copy failed');
     }
+};
+
+const formatDatetimeLocal = (dateInput) => {
+    if (!dateInput) return '';
+    const date = new Date(dateInput);
+    if (Number.isNaN(date.getTime())) return '';
+    const offsetMs = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+};
+
+const getShareBadge = (share) => {
+    if (!share) return null;
+    if (share.visibility === 'password') {
+        return { label: 'Protected', className: 'bg-amber-50 text-amber-800 border-amber-200' };
+    }
+    if (share.visibility === 'public') {
+        return { label: 'Public', className: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+    }
+    return { label: 'Shared', className: 'bg-sky-50 text-sky-800 border-sky-200' };
 };
 
 export const Pastes = () => {
@@ -42,6 +61,7 @@ export const Pastes = () => {
     const [sharePassword, setSharePassword] = useState('');
     const [shareExpiresAt, setShareExpiresAt] = useState('');
     const [shareResult, setShareResult] = useState(null);
+    const [shareByNoteId, setShareByNoteId] = useState({});
 
     const filterOptions = [
         { key: 'active', label: 'All' },
@@ -110,6 +130,38 @@ export const Pastes = () => {
         return data;
     }, [notes, sortOrder]);
 
+    useEffect(() => {
+        if (filteredData.length === 0) {
+            setShareByNoteId({});
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadShareState = async () => {
+            const pairs = await Promise.all(
+                filteredData.map(async (note) => {
+                    try {
+                        const response = await getLatestShareForNote(note._id);
+                        return [note._id, response.share || null];
+                    } catch {
+                        return [note._id, null];
+                    }
+                })
+            );
+
+            if (!cancelled) {
+                setShareByNoteId(Object.fromEntries(pairs));
+            }
+        };
+
+        loadShareState();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [filteredData]);
+
     const handleSearch = (e) => {
         setSearchValue(e.target.value);
     };
@@ -153,13 +205,27 @@ export const Pastes = () => {
         setPage(pageNumber);
     };
 
-    const openShareDialog = (paste) => {
+    const openShareDialog = async (paste) => {
         setShareTarget(paste);
         setShareVisibility('unlisted');
         setSharePassword('');
         setShareExpiresAt('');
-        setShareResult(null);
+        setShareResult(shareByNoteId[paste._id] || null);
         setShareDialogOpen(true);
+
+        try {
+            setSharingNoteId(paste._id);
+            const response = await getLatestShareForNote(paste._id);
+            if (response.share) {
+                setShareResult(response.share);
+                setShareVisibility(response.share.visibility || 'unlisted');
+                setShareExpiresAt(formatDatetimeLocal(response.share.expiresAt));
+            }
+        } catch {
+            // Keep dialog usable even if existing share fetch fails.
+        } finally {
+            setSharingNoteId('');
+        }
     };
 
     const submitShare = async (event) => {
@@ -176,7 +242,12 @@ export const Pastes = () => {
             });
 
             const shareUrl = response?.share?.url || `${window.location.origin}/share/${response?.share?.token}`;
-            setShareResult({ ...response.share, url: shareUrl });
+            const nextShare = { ...response.share, url: shareUrl };
+            setShareResult(nextShare);
+            setShareByNoteId((prev) => ({
+                ...prev,
+                [shareTarget._id]: nextShare,
+            }));
 
             if (navigator.share) {
                 try {
@@ -223,6 +294,12 @@ export const Pastes = () => {
             await revokeShare(shareResult.token);
             toast.success('Share revoked');
             setShareResult(null);
+            if (shareTarget?._id) {
+                setShareByNoteId((prev) => ({
+                    ...prev,
+                    [shareTarget._id]: null,
+                }));
+            }
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Unable to revoke share');
         } finally {
@@ -273,7 +350,17 @@ export const Pastes = () => {
                                     <div key={p._id} className="flex justify-center">
                                         <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
                                             <div className="flex items-center justify-between gap-5 border-b border-slate-200 px-4 py-3">
-                                                <h3 className="truncate text-lg font-medium">{p.title || 'Untitled'}</h3>
+                                                <div className="min-w-0 flex-1">
+                                                    <h3 className="truncate text-lg font-medium">{p.title || 'Untitled'}</h3>
+                                                    {shareByNoteId[p._id] && (() => {
+                                                        const badge = getShareBadge(shareByNoteId[p._id]);
+                                                        return badge ? (
+                                                            <span className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${badge.className}`}>
+                                                                {badge.label}
+                                                            </span>
+                                                        ) : null;
+                                                    })()}
+                                                </div>
                                                 <div className="flex items-center gap-2">
                                                     <NavLink to={`/?pasteId=${p._id}`} aria-label="Edit paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
                                                         <FaRegEdit />

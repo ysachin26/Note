@@ -64,6 +64,12 @@ export const Navbar = () => {
           >
             Bin
           </NavLink>
+          <NavLink
+            to="/shares"
+            className={({ isActive }) => `${linkBase} ${isActive ? linkActive : linkIdle}`}
+          >
+            Shares
+          </NavLink>
         </nav>
 
         <button
