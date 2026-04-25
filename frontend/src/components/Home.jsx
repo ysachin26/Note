@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { createNoteThunk, updateNoteThunk, deleteNoteThunk, fetchNotesThunk } from '../redux/features/noteSlice';
+import { createNoteThunk, updateNoteThunk, fetchNotesThunk } from '../redux/features/noteSlice';
 import { FaRedo, FaRegEdit } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
 import { MdDelete } from "react-icons/md";
@@ -19,11 +19,12 @@ export const Home = () => {
   const dispatch = useDispatch();
   const { notes } = useSelector((state) => state.paste);
 
-  const slicedArr = notes.slice(0, 3);
+  const activeRecentNotes = notes.filter((note) => !note.isBin && !note.isArchived && !note.isImportant);
+  const slicedArr = activeRecentNotes.slice(0, 3);
 
   useEffect(() => {
-    dispatch(fetchNotesThunk())
-  }, [])
+    dispatch(fetchNotesThunk({ page: 1, limit: 6, scope: 'active' }))
+  }, [dispatch])
 
   useEffect(() => {
     if (pasteId) {
@@ -34,7 +35,7 @@ export const Home = () => {
         setSearchParams({ pasteId: pasteId });
       }
     }
-  }, [pasteId]);
+  }, [notes, pasteId, setSearchParams]);
 
   const copyFromHome = async (text) => {
     if (!navigator?.clipboard) {
@@ -117,7 +118,10 @@ export const Home = () => {
   };
 
   const deletePaste = (id) => {
-    dispatch(deleteNoteThunk(id))
+    dispatch(updateNoteThunk({ id, data: { isBin: true } }))
+      .unwrap()
+      .then(() => dispatch(fetchNotesThunk({ page: 1, limit: 6, scope: 'active' })))
+      .catch(() => {});
   };
 
   return (
@@ -276,7 +280,7 @@ export const Home = () => {
             )}
           </div>
 
-          {notes.length > 3 && (
+          {activeRecentNotes.length > 3 && (
             <div className="mt-6 flex justify-center items-center">
               <NavLink
                 to="/notes"

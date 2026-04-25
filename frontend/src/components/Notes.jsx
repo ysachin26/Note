@@ -8,39 +8,19 @@ import { CiShare1, CiStar } from 'react-icons/ci';
 import { useEffect, useMemo, useState } from 'react';
 import { BsPin, BsPinFill } from 'react-icons/bs';
 import { updateNoteThunk, fetchNotesThunk } from '../redux/features/noteSlice';
+import { createShare, revokeShare } from '../api/shareApi';
 
 const copyFromClipboard = async (text) => {
     if (!navigator?.clipboard) {
         toast.error('Clipboard not supported');
         return;
     }
+
     try {
         await navigator.clipboard.writeText(text);
         toast.success('Copied');
     } catch {
         toast.error('Copy failed');
-    }
-};
-
-const sharePaste = async (paste) => {
-    const url = `${window.location.origin}/?pasteId=${paste._id}`;
-    if (navigator.share) {
-        try {
-            await navigator.share({
-                title: paste.title || 'shared paste',
-                text: paste.description,
-                url,
-            });
-            toast.success('Shared successfully');
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                await copyFromClipboard(url);
-                toast.success('Link copied to clipboard');
-            }
-        }
-    } else {
-        await copyFromClipboard(url);
-        toast.success('Link copied to clipboard');
     }
 };
 
@@ -55,6 +35,13 @@ export const Pastes = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [Page, setPage] = useState(1);
+    const [sharingNoteId, setSharingNoteId] = useState('');
+    const [shareDialogOpen, setShareDialogOpen] = useState(false);
+    const [shareTarget, setShareTarget] = useState(null);
+    const [shareVisibility, setShareVisibility] = useState('unlisted');
+    const [sharePassword, setSharePassword] = useState('');
+    const [shareExpiresAt, setShareExpiresAt] = useState('');
+    const [shareResult, setShareResult] = useState(null);
 
     const filterOptions = [
         { key: 'active', label: 'All' },
@@ -166,6 +153,83 @@ export const Pastes = () => {
         setPage(pageNumber);
     };
 
+    const openShareDialog = (paste) => {
+        setShareTarget(paste);
+        setShareVisibility('unlisted');
+        setSharePassword('');
+        setShareExpiresAt('');
+        setShareResult(null);
+        setShareDialogOpen(true);
+    };
+
+    const submitShare = async (event) => {
+        event.preventDefault();
+        if (!shareTarget) return;
+
+        try {
+            setSharingNoteId(shareTarget._id);
+            const response = await createShare({
+                noteId: shareTarget._id,
+                visibility: shareVisibility,
+                password: shareVisibility === 'password' ? sharePassword : undefined,
+                expiresAt: shareExpiresAt ? new Date(shareExpiresAt).toISOString() : null,
+            });
+
+            const shareUrl = response?.share?.url || `${window.location.origin}/share/${response?.share?.token}`;
+            setShareResult({ ...response.share, url: shareUrl });
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: shareTarget.title || 'Shared note',
+                        text: shareTarget.description,
+                        url: shareUrl,
+                    });
+                } catch (error) {
+                    if (error?.name !== 'AbortError') {
+                        // fall through to clipboard copy
+                    }
+                }
+            }
+
+            await copyFromClipboard(shareUrl);
+            toast.success('Share link created and copied');
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Unable to create share link');
+        } finally {
+            setSharingNoteId('');
+        }
+    };
+
+    const closeShareDialog = () => {
+        if (sharingNoteId) return;
+        setShareDialogOpen(false);
+        setShareTarget(null);
+        setShareVisibility('unlisted');
+        setSharePassword('');
+        setShareExpiresAt('');
+        setShareResult(null);
+    };
+
+    const handleCopyShareUrl = async () => {
+        if (!shareResult?.url) return;
+        await copyFromClipboard(shareResult.url);
+    };
+
+    const handleRevokeShare = async () => {
+        if (!shareResult?.token) return;
+        try {
+            setSharingNoteId(shareTarget?._id || '');
+            await revokeShare(shareResult.token);
+            toast.success('Share revoked');
+            setShareResult(null);
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Unable to revoke share');
+        } finally {
+            setSharingNoteId('');
+        }
+    };
+
     const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
     return (
@@ -220,7 +284,12 @@ export const Pastes = () => {
                                                     <button onClick={() => copyFromClipboard(p.description)} aria-label="Copy paste" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
                                                         <IoCopyOutline />
                                                     </button>
-                                                    <button onClick={() => sharePaste(p)} aria-label="Share" className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+                                                    <button
+                                                        onClick={() => openShareDialog(p)}
+                                                        aria-label="Share"
+                                                        disabled={sharingNoteId === p._id}
+                                                        className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
                                                         <CiShare1 />
                                                     </button>
                                                     {p.isPinned ? (
@@ -300,6 +369,107 @@ export const Pastes = () => {
                             </button>
                         </div>
                     </div>
+
+                    {shareDialogOpen && shareTarget && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
+                            <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Share note</p>
+                                        <h3 className="mt-1 text-lg font-semibold text-slate-900">{shareTarget.title || 'Untitled'}</h3>
+                                    </div>
+                                    <button
+                                        onClick={closeShareDialog}
+                                        disabled={Boolean(sharingNoteId)}
+                                        className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+
+                                <form onSubmit={submitShare} className="space-y-5 px-6 py-6">
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <label className="space-y-2 text-sm text-slate-700">
+                                            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Visibility</span>
+                                            <select
+                                                value={shareVisibility}
+                                                onChange={(e) => setShareVisibility(e.target.value)}
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-900"
+                                            >
+                                                <option value="unlisted">Unlisted</option>
+                                                <option value="public">Public</option>
+                                                <option value="password">Password protected</option>
+                                            </select>
+                                        </label>
+
+                                        <label className="space-y-2 text-sm text-slate-700">
+                                            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Expiry</span>
+                                            <input
+                                                type="datetime-local"
+                                                value={shareExpiresAt}
+                                                onChange={(e) => setShareExpiresAt(e.target.value)}
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-900"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <label className="space-y-2 text-sm text-slate-700">
+                                        <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Password</span>
+                                        <input
+                                            type="password"
+                                            value={sharePassword}
+                                            onChange={(e) => setSharePassword(e.target.value)}
+                                            disabled={shareVisibility !== 'password'}
+                                            placeholder={shareVisibility === 'password' ? 'Enter password' : 'Optional when password protection is selected'}
+                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-900 disabled:cursor-not-allowed disabled:bg-slate-100"
+                                        />
+                                    </label>
+
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <button
+                                            type="submit"
+                                            disabled={Boolean(sharingNoteId) || (shareVisibility === 'password' && !sharePassword.trim())}
+                                            className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                            {sharingNoteId === shareTarget._id ? 'Creating...' : 'Create share link'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={closeShareDialog}
+                                            disabled={Boolean(sharingNoteId)}
+                                            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+
+                                    {shareResult && (
+                                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                                            <p className="font-semibold">Share link ready</p>
+                                            <p className="mt-1 break-all text-xs text-emerald-800">{shareResult.url}</p>
+                                            <div className="mt-4 flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCopyShareUrl}
+                                                    className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-emerald-600"
+                                                >
+                                                    Copy link
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRevokeShare}
+                                                    disabled={Boolean(sharingNoteId)}
+                                                    className="rounded-lg border border-rose-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    Revoke link
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </form>
+                            </div>
+                        </div>
+                    )}
 
                     {showFilterBox && (
                         <aside className="w-full self-start rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-24 lg:max-w-none">

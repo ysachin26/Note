@@ -28,3 +28,4 @@ logs
 #file
 *.cpp
 *.exe
+*.md
