@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { loginThunk, registerThunk, clearError } from '../../redux/features/authSlice'
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast'
 
 export const LoginSignup = () => {
@@ -11,6 +12,7 @@ export const LoginSignup = () => {
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
     /** @type {import('@reduxjs/toolkit').ThunkDispatch<any, any, import('@reduxjs/toolkit').AnyAction>} */
     const dispatch = useDispatch()
     const navigate = useNavigate()
@@ -72,6 +74,7 @@ export const LoginSignup = () => {
         }
 
     }
+
     return (
         <div
             className="min-h-screen bg-slate-200"
@@ -158,15 +161,24 @@ export const LoginSignup = () => {
                             >
                                 Password
                             </label>
-                            <input
-                                id="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
-                                type="password"
-                                placeholder="Enter your password"
-                                autoComplete={isLoginMode ? 'current-password' : 'new-password'}
-                            />
+                            <div className='flex items-center relative'>
+                                <input
+                                    id="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-400/40"
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="Enter your password"
+                                    autoComplete={isLoginMode ? 'current-password' : 'new-password'}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 mt-2 text-slate-600 hover:text-slate-900 transition"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                         </div>
 
                         <button
