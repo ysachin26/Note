@@ -75,6 +75,21 @@ export const LoginSignup = () => {
 
     }
 
+function GoogleLogin() {
+  return (
+    <GoogleLogin
+      onSuccess={credentialResponse => {
+        // Decode the credential to get user details
+        const details = jwtDecode(credentialResponse.credential);
+        console.log("User Details:", details);
+      }}
+      onError={() => {
+        console.log('Login Failed');
+      }}
+    />
+  );
+}
+
     return (
         <div
             className="min-h-screen bg-slate-200"

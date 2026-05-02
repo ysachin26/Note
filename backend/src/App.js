@@ -1,7 +1,11 @@
 const express = require('express')
 const cors = require('cors')
-const app = express();
 const cookieParser = require('cookie-parser')
+const authRoutes = require('./routes/auth.routes')
+const noteRoutes = require('./routes/notes.routes')
+const shareRoutes = require('./routes/share.routes')
+
+const app = express();
 
 // middlewares
 app.use(cors({ origin: true, credentials: true }));
@@ -17,6 +21,11 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
     res.send('hello')
 })
+
+// api routes
+app.use('/api/auth', authRoutes);
+app.use('/api/notes', noteRoutes)
+app.use('/api/share', shareRoutes)
 
 // JSON parse error handler: returns a clear 400 when client sends invalid JSON
 app.use((err, req, res, next) => {
