@@ -8,7 +8,7 @@ dns.setDefaultResultOrder('ipv4first')
 dnsFallBackMechanism()
 connectDB();
 
-const app = require('./src/app')
+const app = require('./src/App')
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
