@@ -1,5 +1,4 @@
 
-
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { loginThunk, registerThunk, clearError } from '../../redux/features/authSlice'
