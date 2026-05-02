@@ -1,5 +1,4 @@
-import { createBrowserRouter } from "react-router";
-import { RouterProvider } from "react-router/dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Navbar } from './components/Navbar'
 import { Pastes } from './components/Notes'
 import { ViewPastes } from './components/ViewPastes'
@@ -13,7 +12,7 @@ import SharedNote from './components/SharedNote';
 import Shares from './components/Shares';
 
 import { useDispatch, useSelector } from 'react-redux'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { fetchMeThunk } from './redux/features/authSlice'
 import { fetchNotesThunk } from './redux/features/noteSlice'
@@ -23,12 +22,20 @@ import { ResetPasswordForm } from './components/auth/ResetPasswordForm'
 import { ForgotPasswordForm } from './components/auth/ForgotPasswordForm'
 
 const ProtectedRoute = ({ children }) => {
+  const navigate = useNavigate()
   const { user, initialized } = useSelector((state) => state.auth)
+
+  useEffect(() => {
+    if (initialized && !user) {
+      navigate('/login', { replace: true })
+    }
+  }, [user, initialized, navigate])
+
   if (!initialized) {
-    return <div>Loading...</div>
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
   if (!user) {
-    return <Navigate to="/login" />
+    return null
   }
   return children
 }
